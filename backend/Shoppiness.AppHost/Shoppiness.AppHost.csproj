@@ -1,0 +1,23 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.2.2">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <UserSecretsId>4fa30ef8-9eb6-4c2f-ad90-573f13359acd</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\src\Shoppiness.ProductService\Shoppiness.ProductService.csproj" />
+      <ProjectReference Include="..\src\Shoppiness.StockService\Shoppiness.StockService.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Aspire.Hosting.Azure.ServiceBus" Version="13.2.2" />
+      <PackageReference Include="Aspire.Hosting.Docker" Version="13.2.2" />
+      <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.2.2" />
+      <PackageReference Include="Aspire.Hosting.Redis" Version="13.2.2" />
+    </ItemGroup>
+
+</Project>

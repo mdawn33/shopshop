@@ -1,0 +1,6 @@
+@Shoppiness.NotificationService_HostAddress = http://localhost:5190
+
+GET {{Shoppiness.NotificationService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

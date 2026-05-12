@@ -1,0 +1,6 @@
+@Shoppines.ProductService_HostAddress = http://localhost:5255
+
+GET {{Shoppines.ProductService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

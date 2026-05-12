@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/AI/">
+    <File Path="../CLAUDE.md" />
+  </Folder>
+  <Project Path="Shoppiness.AppHost/Shoppiness.AppHost.csproj" />
+  <Project Path="Shoppiness.ServiceDefaults/Shoppiness.ServiceDefaults.csproj" />
+  <Project Path="src/Shared.ServiceBus/Shared.ServiceBus.csproj" />
+  <Project Path="src/SharedContracts/SharedContracts.csproj" />
+  <Project Path="src/Shoppiness.NotificationService/Shoppiness.NotificationService.csproj" />
+  <Project Path="src/Shoppiness.PaymentService/Shoppiness.PaymentService.csproj" />
+  <Project Path="src\Shoppiness.ProductService\Shoppiness.ProductService.csproj" />
+  <Project Path="src\ProductService.Domain\ProductService.Domain.csproj" />
+  <Project Path="src\ProductService.Infrastructure\ProductService.Infrastructure.csproj" />
+  <Project Path="src\Shoppiness.StockService\Shoppiness.StockService.csproj" />
+  <Project Path="src\StockService.Domain\StockService.Domain.csproj" />
+  <Project Path="src\StockService.Infrastructure\StockService.Infrastructure.csproj" />
+</Solution>
