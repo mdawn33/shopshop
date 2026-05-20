@@ -17,7 +17,7 @@ public static class InfrastructureServiceExtensions
     {
         services.AddDbContext<ProductDbContext>(options =>
             options.UseNpgsql(
-                configuration.GetConnectionString("ProductPgDb"),
+                configuration.GetConnectionString("ProductsPgDb"),
                 npgsql => npgsql.MigrationsAssembly(typeof(ProductDbContext).Assembly.FullName)));
 
         return services;

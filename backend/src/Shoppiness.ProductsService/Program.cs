@@ -17,7 +17,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 
 builder.Services.AddOpenApi();
-builder.Services.AddEndpointsApiExplorer();
 
 // Register Azure Service Bus client
 builder.AddAzureServiceBusClient("service-bus");
@@ -34,7 +33,7 @@ app.MapDefaultEndpoints();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.UseSwaggerUI(c => c.SwaggerEndpoint("/openapi/v1.json", "Shoppiness.ProductService v1"));
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("/openapi/v1.json", "Shoppiness.ProductsService v1"));
 }
 
 app.UseHttpsRedirection();

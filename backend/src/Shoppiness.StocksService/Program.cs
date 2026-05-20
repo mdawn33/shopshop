@@ -22,7 +22,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.UseSwaggerUI(c => c.SwaggerEndpoint("/openapi/v1.json", "Shoppiness.StockService v1"));
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("/openapi/v1.json", "Shoppiness.StocksService v1"));
 }
 
 app.UseHttpsRedirection();
