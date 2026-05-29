@@ -1,14 +1,10 @@
+using System.Net.Sockets;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
 builder.AddDockerComposeEnvironment(name: "shoppiness-env");
 
 // Create the DBs for the products, stocks and payments services
-
-// var productPostgres = builder.AddPostgres("productPostgres")
-//     .WithImage("postgres", "18.3-alpine3.23")
-//     .WithHostPort(5432)
-//     .WithInitFiles("../init/1CreateProductDbUser.sql")
-//     .WithDataVolume(isReadOnly: false);
 
 // var postgresPassword = builder.AddParameter("postgresPassword", "Abc1234", secret: true);
 
@@ -17,6 +13,7 @@ var shoppinessPostgres = builder.AddPostgres("postgres")
     .WithImage("postgres", "18.3-alpine3.23")
     .WithHostPort(5432)
     .WithInitFiles("../init/1CreateDbsUsers.sql")
+    // .WithEnvironment() // Add db user password to pass to the init script
     .WithDataVolume(isReadOnly: false);
 
 // This allows me to use an already created database, and inject it into the application
@@ -37,26 +34,43 @@ var stocksPgDb = shoppinessPostgres.AddDatabase("StocksPgDb");
 var stocksApi = builder.AddProject<Projects.Shoppiness_StocksService>("stocks-api")
     .WithReference(stocksPgDb)
     // .WithReference(serviceBus)
-    .WithHttpEndpoint(port: 5200, name: "http")
-    .WithExternalHttpEndpoints();
+    .WithHttpEndpoint(port: 5200, name: "http");
 
 
 var productsApi = builder.AddProject<Projects.Shoppiness_ProductsService>("products-api")
     .WithReference(stocksApi)
     .WithReference(productsPgDb)
     // .WithReference(serviceBus)
-    .WithHttpEndpoint(port: 5100, name: "http")
-    .WithExternalHttpEndpoints();
+    .WithHttpEndpoint(port: 5100, name: "http");
+
+var keycloak = builder.AddKeycloak("keycloak", 8080)
+    .WithDataVolume();
+
+var jaeger = builder.AddContainer("jaeger", "jaegertracing/jaeger:latest")
+    .WithHttpEndpoint(
+        port: 16686,
+        targetPort: 16686,
+        name: "ui")
+    .WithEndpoint(
+        targetPort: 4317,
+        name: "otlp",
+        scheme: "http",
+        isProxied: false);
 
 // API Gateway
 builder.AddProject<Projects.Gateway_Api>("gateway-api")
+    .WithReference(keycloak)
     .WithReference(stocksApi)
     .WithReference(productsApi)
+    .WaitFor(keycloak)
     .WaitFor(stocksApi)
     .WaitFor(productsApi)
     .WithHttpsEndpoint(5001)
     .WithHttpEndpoint(5000)
-    .WithExternalHttpEndpoints();
+    .WithExternalHttpEndpoints()
+    .WithEnvironment("JAEGER_OTLP_ENDPOINT", jaeger.GetEndpoint("otlp"));
+
+
 
 
 

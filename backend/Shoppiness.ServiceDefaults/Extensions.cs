@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.ServiceDiscovery;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
 namespace Microsoft.Extensions.Hosting;
@@ -59,6 +59,7 @@ public static class Extensions
                     .AddHttpClientInstrumentation()
                     .AddRuntimeInstrumentation();
             })
+            .ConfigureResource(res => res.AddService("api-gateway"))
             .WithTracing(tracing =>
             {
                 tracing.AddSource(builder.Environment.ApplicationName)
@@ -70,8 +71,9 @@ public static class Extensions
                     )
                     // Uncomment the following line to enable gRPC instrumentation (requires the OpenTelemetry.Instrumentation.GrpcNetClient package)
                     //.AddGrpcClientInstrumentation()
-                    .AddHttpClientInstrumentation()
-                    .AddSource("Azure.Messaging.ServiceBus");
+                    .AddHttpClientInstrumentation();
+                // .AddSource("Azure.Messaging.ServiceBus");
+                
             });
 
         builder.AddOpenTelemetryExporters();
@@ -81,7 +83,7 @@ public static class Extensions
 
     private static TBuilder AddOpenTelemetryExporters<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
     {
-        var useOtlpExporter = !string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
+        var useOtlpExporter = !string.IsNullOrWhiteSpace(builder.Configuration["JAEGER_OTLP_ENDPOINT"]);
 
         if (useOtlpExporter)
         {
