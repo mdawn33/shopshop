@@ -1,3 +1,10 @@
 import { Routes } from "@angular/router";
+import { MainView } from "./main-view/main-view";
 
-export default [] as Routes;
+export default [
+    {
+        path: '',
+        component: MainView
+
+    }
+] as Routes;

@@ -1,42 +1,68 @@
 import { computed, Injectable, signal } from '@angular/core';
-import { User } from '../models/user';
+import { HttpClient } from '@angular/common/http';
+import { catchError, map, of, tap } from 'rxjs';
+import { environment } from '../../../environments/environment';
+
+
+export interface Claim {
+  type: string;
+  value: string;
+}
 
 @Injectable({
   providedIn: 'root',
 })
 export class Auth {
-
   
-  private readonly user = signal<User | null>(null);
-  private readonly _token = signal<string | null>(null); 
+  private userClaims = signal<Claim[] | null>(null);
+  readonly currentUser = this.userClaims.asReadonly;
 
-  readonly currentUser = this.user.asReadonly();
+  readonly isAuthenticated = computed(() => this.userClaims() != null);
 
-  readonly isAuthenticated = computed(() => this.currentUser() !== null);
+  constructor(private http: HttpClient) {}
+  
+  checkSession() {
+    return this.http.get<Claim[]>(`${environment.apiGatewayUrl}/bff/user`).pipe(
+      tap((claims) => this.userClaims.set(claims)),
+      map(() => true),
+      catchError(() => {
+        this.userClaims.set(null);
+        return of(false);
+      })
+    );
 
-  readonly token = this._token.asReadonly();
-
-
-  constructor() {
-    // temporary user
-    const defaultUser: User = { id: '1', email: 'abc@123.com', displayName: '' };
-
-    this.user.set(defaultUser);
+    // this.http.get('/bff/user').subscribe({
+    //   next: (res: any) => {
+    //     this.isAuthenticated.set(true);
+    //     this.userClaims.set(res.claims);
+    //   },
+    //   error: () => {
+    //     this.isAuthenticated.set(false);
+    //     this.userClaims.set(null);
+    //   }
+    // });
   }
 
-
-  login() : Promise<never> {
-    console.warn('Not implemented');
-    return Promise.reject(new Error('Not implemented'));
+  /**
+   * Helper method to scan the current user's claims array for a specific permission or role.
+   */
+  hasClaim(claimType: string, expectedValue: string): boolean {
+    const claims = this.userClaims();
+    if (!claims) return false;
+    
+    return claims.some(c => c.type === claimType && c.value === expectedValue);
   }
 
-  logout() : Promise<never> {
-    console.warn('Not implemented');
-    return Promise.reject(new Error('Not implemented'));
+  login(returnUrl?: string) : void {
+    const query = returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : '';
+    window.location.href = `${environment.apiGatewayUrl}/bff/login${query}`;
   }
 
-  register() : Promise<never> {
-    console.warn('Not implemented');
-    return Promise.reject(new Error('Not implemented'));
+  logout() : void {
+    window.location.href = `${environment.apiGatewayUrl}/bff/logout`;
+  }
+
+  register() : void {
+    window.location.href = `${environment.apiGatewayUrl}/bff/register`;
   }
 }

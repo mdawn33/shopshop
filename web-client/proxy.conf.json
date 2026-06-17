@@ -1,0 +1,10 @@
+// This was added for testing purposes, it is not being used
+
+{
+  "/bff": {
+    "target": "https://localhost:5001",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  }
+}
