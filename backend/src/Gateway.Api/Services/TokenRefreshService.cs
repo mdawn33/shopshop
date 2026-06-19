@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
+
 namespace Gateway.Api.Services;
 
 // Services/TokenRefreshService.cs
@@ -43,19 +45,20 @@ public class TokenRefreshService
         var client = _httpClientFactory.CreateClient();
         
         // Keycloak token endpoint URL (e.g., https://keycloak/realms/myrealm/protocol/openid-connect/token)
-        var tokenEndpoint = _configuration["Oidc:TokenEndpoint"];
+        var tokenEndpoint = _configuration["Keycloak:TokenUrl"];
 
         var requestBody = new Dictionary<string, string>
         {
             { "grant_type", "refresh_token" },
             { "refresh_token", refreshToken },
-            { "client_id", _configuration["Oidc:ClientId"]! },
-            { "client_secret", _configuration["Oidc:ClientSecret"]! }
+            { "client_id", _configuration["Authentication:OpenIdConnect:ClientId"]! },
+            // { "client_secret", _configuration["Authentication:ClientSecret"]! }
         };
 
         var response = await client.PostAsync(tokenEndpoint, new FormUrlEncodedContent(requestBody));
         if (!response.IsSuccessStatusCode) return null;
 
+        // Is the refresh token renewed?
         var tokenResponse = await response.Content.ReadFromJsonAsync<KeycloakTokenResponse>();
         if (tokenResponse == null) return null;
 
@@ -63,15 +66,25 @@ public class TokenRefreshService
         var newExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn).ToString("o");
 
         // 4. Update the values inside the authentication cookie context
-        var authResult = await context.AuthenticateAsync();
-        if (authResult.Succeeded && authResult.Properties != null)
+        var authResult = await context.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        
+        if (authResult is { Succeeded: true, Properties: not null })
         {
-            authResult.Properties.UpdateTokenValue("access_token", tokenResponse.AccessToken);
-            authResult.Properties.UpdateTokenValue("refresh_token", tokenResponse.RefreshToken);
-            authResult.Properties.UpdateTokenValue("expires_at", newExpiresAt);
+            // Remove old tokens
+            authResult.Properties.StoreTokens([
+                new AuthenticationToken { Name = "access_token", Value = tokenResponse.AccessToken },
+                new AuthenticationToken { Name = "refresh_token", Value = tokenResponse.RefreshToken },
+                new AuthenticationToken { Name = "expires_at", Value = newExpiresAt }
+            ]);
+            
+            // authResult.Properties.UpdateTokenValue("access_token", tokenResponse.AccessToken);
+            // authResult.Properties.UpdateTokenValue("refresh_token", tokenResponse.RefreshToken);
+            // authResult.Properties.UpdateTokenValue("expires_at", newExpiresAt);
 
+            // 6. Persist changes back into the stateless browser cookie on-the-fly
             // Re-sign and write the updated cookie back to the response headers
-            await context.SignInAsync(authResult.Principal, authResult.Properties);
+            // This line registers a callback on the response pipeline to write the updated cookie
+            await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, authResult.Principal, authResult.Properties);
         }
 
         return tokenResponse.AccessToken;

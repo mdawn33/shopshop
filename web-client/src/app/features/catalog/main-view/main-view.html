@@ -1,1 +1,17 @@
 <p>main-view works!</p>
+
+
+<p>
+    @if (authService.isAuthenticated()) {
+    <!-- The Logout Button -->
+    <button (click)="logout()" class="logout-btn">
+      Logout
+    </button>
+  } @else {
+    <button routerLink="/login">Login</button>
+  }
+</p>
+
+<p>
+  <button routerLink="/product/detail/1">Product 1</button>
+</p>

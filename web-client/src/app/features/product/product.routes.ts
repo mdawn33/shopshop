@@ -1,3 +1,8 @@
 import { Routes } from "@angular/router";
+import { ProductDetail } from "./product-detail/product-detail";
 
-export default [] as Routes;
+export default [
+    {
+        path: 'detail/:id', component: ProductDetail
+    }
+] as Routes;

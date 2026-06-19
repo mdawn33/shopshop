@@ -1,4 +1,6 @@
 using Gateway.Api.Helpers;
+using Gateway.Api.Services;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -41,6 +43,8 @@ public static class Endpoints
         
         routes.MapGet("/bff/logout", (HttpContext context) =>
         {
+            // TODO: Handle the error when user is not authenticated or cookie is not provided and this endpoint is called
+            
             // Clear both the local BFF session cookie AND the Identity Provider session
             return Results.SignOut(
                 properties: new AuthenticationProperties { RedirectUri = "/" },
@@ -53,12 +57,11 @@ public static class Endpoints
         });
 
         routes.MapGet("/bff/user", (HttpContext context) =>
-        {
-            if (context.User.Identity?.IsAuthenticated != true)
-                return Results.Unauthorized();
-
-            return Results.Ok(context.User.Claims.Select(c => new { c.Type, c.Value }));
-        });
+            {
+                return context.User.Identity?.IsAuthenticated != true ? 
+                        Results.Unauthorized() : 
+                        Results.Ok(context.User.Claims.Select(c => new { c.Type, c.Value }));
+            });
 
         routes.MapGet("/bff/register", () =>
         {
@@ -69,6 +72,35 @@ public static class Endpoints
             
             return Results.Challenge(properties);
         });
+
+
+        routes.MapPost("/bff/refresh", async (HttpContext context, TokenRefreshService tokenRefreshService) =>
+        {
+            var token = await tokenRefreshService.GetValidTokenAsync(context);
+            return token is not null ? Results.Ok() : Results.Unauthorized();
+        })
+        .RequireAuthorization();
+        
+        
+        // Endpoint for the frontend to obtain a CSRF token
+        // This sets a non-HttpOnly cookie that JavaScript CAN read to extract the token string.
+        routes.MapGet("/api/antiforgery/token", (IAntiforgery antiforgery, HttpContext httpContext) =>
+        {
+            var tokens = antiforgery.GetAndStoreTokens(httpContext);
+
+            // Write a cookie
+            httpContext.Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken!, 
+                new CookieOptions 
+                { 
+                    HttpOnly = false, 
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict
+                });
+
+            return Results.Ok();
+        })
+        .RequireAuthorization(); // Ensure only logged-in users get a session anti-forgery token
+
 
     }
 }
