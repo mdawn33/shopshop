@@ -1,0 +1,81 @@
+<div class="utility-bar">
+  <div class="utility-bar__inner">
+    <button type="button" class="utility-bar__location">
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="icon icon--sm">
+        <path d="M12 2C7.6 2 4 5.6 4 10c0 5.4 7 11.4 7.3 11.6.2.2.5.3.7.3s.5-.1.7-.3C13 21.4 20 15.4 20 10c0-4.4-3.6-8-8-8Zm0 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z" fill="currentColor"/>
+      </svg>
+      Enviar a <strong>{{ deliveryLocation() }}</strong>
+    </button>
+    <nav class="utility-bar__links" aria-label="Enlaces de ayuda">
+      <a href="#">Seguimiento de pedido</a>
+      <a href="#">Opiniones de clientes</a>
+      <a href="#">Ayuda</a>
+    </nav>
+  </div>
+</div>
+
+<header class="site-header">
+  <div class="site-header__inner">
+    <a href="#" class="brand" aria-label="Libroteca, inicio">
+      <svg viewBox="0 0 32 32" aria-hidden="true" class="brand__mark">
+        <path d="M4 6.5C4 5.7 4.7 5 5.5 5H15c1 0 1.9.4 2.6 1.1.7-.7 1.6-1.1 2.6-1.1h6.3c.8 0 1.5.7 1.5 1.5v18c0 .8-.7 1.5-1.5 1.5h-7.5a3 3 0 0 0-2.6 1.5A3 3 0 0 0 13.8 26H6.3A1.5 1.5 0 0 1 4.8 24.5V6.5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M16 7.4V26" stroke="currentColor" stroke-width="1.6"/>
+      </svg>
+      <span class="brand__name">Libroteca</span>
+    </a>
+
+    <form class="search-bar" role="search" (submit)="onSubmit($event)">
+      <label class="sr-only" for="catalog-search">Search by category or name on Shoppiness</label>
+      <input
+        id="catalog-search"
+        type="search"
+        name="q"
+        placeholder="Search Shoppinness"
+        [value]="searchQuery()"
+        (input)="searchQuery.set($any($event.target).value)"
+      />
+      <button type="submit" aria-label="Buscar">
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="icon">
+          <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/>
+          <path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </form>
+
+    <div class="header-actions">
+      <a class="header-actions__item" href="#">
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="icon">
+          <path d="M12 20.5s-7.5-4.6-9.8-9.1C.7 7.9 2.2 4.5 5.5 3.7c2-.5 4 .3 5.2 2 .3.4.9.4 1.2 0 1.2-1.7 3.2-2.5 5.2-2 3.3.8 4.8 4.2 3.3 7.7-2.3 4.5-9.8 9.1-9.8 9.1Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+        </svg>
+        <span class="header-actions__label">Mis listas</span>
+      </a>
+
+      <a class="header-actions__item" href="#">
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="icon">
+          <circle cx="12" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M4.5 20c1.4-3.6 4.3-5.5 7.5-5.5s6.1 1.9 7.5 5.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        <span class="header-actions__label">Mi cuenta</span>
+      </a>
+
+      <a class="header-actions__item header-actions__item--cart" href="#">
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="icon">
+          <path d="M3 7h18l-1.6 11.2a2 2 0 0 1-2 1.8H6.6a2 2 0 0 1-2-1.8L3 7Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M8 7V6a4 4 0 0 1 8 0v1" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        </svg>
+        <span class="header-actions__label">Carrito</span>
+        @if (cartCount() > 0) {
+          <span class="cart-badge">{{ cartCount() }}</span>
+        }
+      </a>
+    </div>
+  </div>
+
+  <nav class="quick-nav" aria-label="Navegación principal">
+    <div class="quick-nav__track">
+      @for (link of navLinks(); track link.href; let first = $first) {
+        <a [href]="link.href" class="quick-nav__link" [class.quick-nav__link--active]="first">{{ link.label }}</a>
+      }
+    </div>
+  </nav>
+</header>

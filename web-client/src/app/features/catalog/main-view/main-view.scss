@@ -1,0 +1,97 @@
+// ---------------------------------------------------------------------------
+// Design tokens defined here on :host so they always cascade to every child
+// component via CSS custom property inheritance — no global styles.scss
+// import required. catalog-theme.scss still exists as the "proper" global
+// setup, but this keeps the component self-contained.
+// ---------------------------------------------------------------------------
+
+// :host is and Angular-only CSS selector that targets the component's DOM element
+:host {
+  display: block;
+
+  // Palette
+  --color-bg:            #efeae0;
+  --color-surface:       #ffffff;
+  --color-surface-sunken:#f6f3ec;
+  --color-ink:           #1f2a22;
+  --color-ink-soft:      #5b6459;
+  --color-ink-faint:     #8a8d80;
+  --color-border:        #ddd5c7;
+  --color-primary:       #2f5233;
+  --color-primary-dark:  #1e3a23;
+  --color-primary-soft:  #e3ebe2;
+  --color-accent:        #c77d2e;
+  --color-accent-dark:   #a6651e;
+  --color-wine:          #7a2e3a;
+
+  // Typography
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-body:    'Public Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono:    'IBM Plex Mono', 'Roboto Mono', ui-monospace, monospace;
+
+  // Shape
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+
+  // Elevation
+  --shadow-card: 0 1px 2px rgba(31,42,34,.06), 0 10px 24px -16px rgba(31,42,34,.35);
+  --shadow-pop:  0 4px 10px -2px rgba(31,42,34,.18), 0 16px 32px -16px rgba(31,42,34,.3);
+
+  // Layout
+  --header-h:    64px;
+  --container-w: 1280px;
+
+  font-family: var(--font-body);
+  color: var(--color-ink);
+  background: var(--color-bg);
+}
+
+// ---------------------------------------------------------------------------
+// Page layout
+// ---------------------------------------------------------------------------
+.catalog-layout {
+  max-width: var(--container-w);
+  margin: 0 auto;
+  padding: 24px 24px 64px;
+  display: grid;
+  grid-template-columns: 256px 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+// min-width: 0 prevents the content column from overflowing the grid track
+// (default is min-width: auto which lets content push the column wider than
+// the available space, breaking the max-width container constraint).
+.catalog-content {
+  min-width: 0;
+}
+
+// ---------------------------------------------------------------------------
+// Skip link — lives here (not in catalog-theme.scss) so it's guaranteed to
+// load as part of the self-contained component bundle.
+// ---------------------------------------------------------------------------
+.skip-link {
+  position: fixed;
+  left: 12px;
+  top: -80px;
+  z-index: 9999;
+  padding: 10px 16px;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  transition: top 0.15s ease;
+
+  &:focus {
+    top: 12px;
+  }
+}
+
+@media (max-width: 900px) {
+  .catalog-layout {
+    grid-template-columns: 1fr;
+    padding-top: 16px;
+  }
+}

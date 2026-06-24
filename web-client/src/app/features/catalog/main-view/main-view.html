@@ -1,17 +1,34 @@
-<p>main-view works!</p>
+<a class="skip-link" href="#main-content">Jump to the main content</a>
 
+<app-header
+  [deliveryLocation]="deliveryLocation()"
+  [cartCount]="cartCount()"
+  [navLinks]="navLinks"
+  (search)="onSearch($event)"
+></app-header>
 
-<p>
-    @if (authService.isAuthenticated()) {
-    <!-- The Logout Button -->
-    <button (click)="logout()" class="logout-btn">
-      Logout
-    </button>
-  } @else {
-    <button routerLink="/login">Login</button>
-  }
-</p>
+<main id="main-content" class="catalog-layout">
+  <app-sidebar
+    [categories]="categories"
+    [activeCategory]="activeCategory()"
+    (categorySelected)="selectCategory($event)"
+  />
 
-<p>
-  <button routerLink="/product/detail/1">Product 1</button>
-</p>
+  <div class="catalog-content">
+    <app-promo-carousel [banners]="promoBanners" />
+
+    @for (section of sections; track section.id) {
+      <app-product-rail
+        [sectionId]="section.id"
+        [title]="section.title"
+        [link]="section.link"
+        [products]="section.products"
+        [wishlistedIds]="wishlist()"
+        (addToCart)="addToCart($event)"
+        (toggleWishlist)="toggleWishlist($event)"
+      />
+    }
+  </div>
+</main>
+
+<app-footer (subscribe)="onNewsletterSubscribe($event)" />

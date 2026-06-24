@@ -19,12 +19,12 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(withInterceptors([authInterceptor, errorInterceptor, loadingInterceptor])),
     // Modern Angular 19+ Initialization Strategy
-    provideAppInitializer(() => {
-      // Runs in the injection context, allowing direct service resolution
-      const authService = inject(Auth);
+    // provideAppInitializer(() => {
+    //   // Runs in the injection context, allowing direct service resolution
+    //   const authService = inject(Auth);
       
-      // Blocks bootstrap until the session handshake with the ASP.NET BFF resolves
-      return authService.checkSession();
-    })
+    //   // Blocks bootstrap until the session handshake with the ASP.NET BFF resolves
+    //   return authService.checkSession();
+    // })
   ]
 };

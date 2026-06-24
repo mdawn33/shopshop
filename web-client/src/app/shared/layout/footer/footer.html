@@ -1,0 +1,42 @@
+<footer class="site-footer">
+  <div class="site-footer__inner">
+    <div class="site-footer__newsletter">
+      <h2>No te pierdas ninguna novedad</h2>
+      <p>Suscríbete y recibe descuentos exclusivos cada semana.</p>
+      <form class="site-footer__form" (submit)="onSubmit($event)">
+        <label class="sr-only" for="newsletter-email">Correo electrónico</label>
+        <input
+          id="newsletter-email"
+          type="email"
+          placeholder="tu@correo.com"
+          [value]="email()"
+          (input)="email.set($any($event.target).value)"
+          name="email"
+        />
+        <button type="submit">Suscribirme</button>
+      </form>
+    </div>
+
+    <div class="site-footer__columns">
+      <div>
+        <h3>Ayuda</h3>
+        <a href="#">Seguimiento de pedido</a>
+        <a href="#">Cambios y devoluciones</a>
+        <a href="#">Preguntas frecuentes</a>
+      </div>
+      <div>
+        <h3>Libroteca</h3>
+        <a href="#">Quiénes somos</a>
+        <a href="#">Trabaja con nosotros</a>
+        <a href="#">Vende tus libros</a>
+      </div>
+      <div>
+        <h3>Síguenos</h3>
+        <a href="#">Instagram</a>
+        <a href="#">Facebook</a>
+        <a href="#">TikTok</a>
+      </div>
+    </div>
+  </div>
+  <p class="site-footer__copy">© 2026 Libroteca. Todos los derechos reservados.</p>
+</footer>

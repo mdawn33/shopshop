@@ -1,0 +1,289 @@
+:host {
+  display: block;
+  // position: sticky + top: 0 makes the entire header lock to the top of the
+  // viewport as the user scrolls. It only sticks once it reaches the top —
+  // before that it scrolls normally like any other element.
+  position: sticky;
+  top: 0;
+  z-index: 100; // Must be high enough to sit above all page content, but below
+                // the sidebar drawer (z-index 151) so the drawer covers it.
+}
+
+.utility-bar {
+  // The second argument in var() is a fallback. If --color-primary-dark isn't
+  // defined (e.g. this component is used outside of app-catalog-page where the
+  // tokens are declared), the hardcoded #1e3a23 is used instead.
+  background: var(--color-primary-dark, #1e3a23);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.8125rem;
+
+  &__inner {
+    max-width: var(--container-w);
+    margin: 0 auto; // Centers the inner content — the classic "centered container"
+                    // pattern: fixed max-width + auto left/right margins.
+    padding: 8px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  &__location {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 0;
+    color: inherit; // Inherits the utility bar's rgba white text color so
+                    // it doesn't need its own color declaration.
+    font: inherit;
+    cursor: pointer;
+    padding: 2px 0;
+
+    strong { color: #fff; font-weight: 600; }
+    &:hover { color: #fff; }
+  }
+
+  &__links {
+    display: flex;
+    gap: 20px;
+
+    a {
+      color: inherit;
+      text-decoration: none;
+      &:hover { color: #fff; text-decoration: underline; }
+    }
+  }
+}
+
+// Hide all utility links except the last one on small screens to save space.
+// :not(:last-child) targets every link that isn't the last sibling.
+@media (max-width: 720px) {
+  .utility-bar__links a:not(:last-child) { display: none; }
+}
+
+.site-header {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+
+  &__inner {
+    max-width: var(--container-w);
+    margin: 0 auto;
+    padding: 14px 24px;
+    // -----------------------------------------------------------------------
+    // grid-template-columns: auto 1fr auto
+    //
+    // Three columns:
+    //   auto  → logo: takes exactly as much space as its content needs.
+    //   1fr   → search bar: takes all remaining space between logo and actions.
+    //   auto  → action icons: takes exactly as much space as its content needs.
+    //
+    // This is the standard CSS Grid pattern for a header layout where the
+    // center element stretches to fill available width.
+    // -----------------------------------------------------------------------
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 24px;
+  }
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--color-primary-dark);
+
+  &__mark { width: 30px; height: 30px; }
+
+  &__name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.5rem;
+    letter-spacing: -0.01em; // Negative letter-spacing tightens large display
+                              // text, making it feel more intentional and less
+                              // like default browser rendering.
+  }
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  background: var(--color-surface-sunken);
+  border: 1.5px solid var(--color-border);
+  border-radius: 999px; // A value larger than half the element's height always
+                        // produces a perfect pill shape, regardless of the
+                        // element's actual size. 999px is a common trick for this.
+  padding: 4px 6px 4px 18px;
+  max-width: 640px;
+  width: 100%;
+  justify-self: center;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  // -------------------------------------------------------------------------
+  // :focus-within
+  //
+  // This pseudo-class activates when ANY descendant of the element has focus.
+  // So the entire search bar highlights when the user clicks into the input,
+  // not just the input itself. This creates a better visual affordance —
+  // the whole pill feels interactive, not just a small inner element.
+  // -------------------------------------------------------------------------
+  &:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-soft);
+  }
+
+  input {
+    flex: 1; // Stretches the input to fill all space between the padding and
+             // the search button.
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: 0.9375rem;
+    color: var(--color-ink);
+    padding: 8px 0;
+
+    &::placeholder { color: var(--color-ink-faint); }
+    &:focus { outline: none; } // The outline is suppressed here because the
+                               // parent :focus-within already provides a clear
+                               // visual focus indicator for the whole bar.
+  }
+
+  button {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 0;
+    background: var(--color-primary);
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:hover { background: var(--color-primary-dark); }
+  }
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  &__item {
+    position: relative; // Needed so .cart-badge (absolute) positions itself
+                        // relative to this item, not the whole header.
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    color: var(--color-ink-soft);
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+
+    &:hover {
+      background: var(--color-surface-sunken);
+      color: var(--color-primary-dark);
+    }
+  }
+
+  &__label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+  }
+}
+
+.cart-badge {
+  // Absolutely positioned relative to .header-actions__item (its nearest
+  // position: relative ancestor). top: 0 + right: 4px pins it to the
+  // top-right corner of the cart icon.
+  position: absolute;
+  top: 0;
+  right: 4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  display: grid;
+  place-items: center;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  border-radius: 999px; // Pill shape — always a circle/oval regardless of content width.
+  line-height: 1;
+}
+
+// ---------------------------------------------------------------------------
+// Responsive header reflow with grid-template-areas
+//
+// On small screens we switch from a 3-column single-row layout to a 2-row
+// layout where the search bar moves to its own full-width row below the logo
+// and action icons.
+//
+// grid-template-areas lets you define the layout visually using named slots:
+//   Row 1: 'brand actions'  → logo on left, icons on right
+//   Row 2: 'search search'  → search bar spans both columns
+//
+// Each child then declares which named slot it occupies with grid-area.
+// ---------------------------------------------------------------------------
+@media (max-width: 860px) {
+  .site-header__inner {
+    grid-template-columns: auto auto;
+    grid-template-areas: 'brand actions' 'search search';
+    row-gap: 12px;
+  }
+  .brand          { grid-area: brand; }
+  .header-actions { grid-area: actions; }
+  .search-bar     { grid-area: search; max-width: none; }
+  .header-actions__label { display: none; } // Hide text labels, keep only icons.
+}
+
+.quick-nav {
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+
+  &__track {
+    max-width: var(--container-w);
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    gap: 4px;
+    overflow-x: auto; // Allows the nav links to scroll horizontally on small
+                      // screens instead of wrapping to a second line.
+    scrollbar-width: none; // Firefox: hides the scrollbar visually while keeping
+                            // the scroll behavior intact.
+
+    // Chrome/Safari: same effect as scrollbar-width: none but for webkit browsers.
+    &::-webkit-scrollbar { display: none; }
+  }
+
+  &__link {
+    flex-shrink: 0; // Prevents links from compressing when space is tight —
+                    // they'd rather overflow (and be scrollable) than shrink.
+    padding: 12px 14px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-ink-soft);
+    text-decoration: none;
+    border-bottom: 2.5px solid transparent; // Transparent border reserves space
+                                             // so the active underline doesn't
+                                             // shift the layout when it appears.
+    white-space: nowrap;
+    transition: color 0.15s ease, border-color 0.15s ease;
+
+    &:hover {
+      color: var(--color-primary-dark);
+      border-color: var(--color-border);
+    }
+
+    &--active {
+      color: var(--color-primary-dark);
+      border-color: var(--color-accent); // Replaces transparent with the amber
+                                          // accent — the underline indicator.
+    }
+  }
+}

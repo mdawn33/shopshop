@@ -1,0 +1,13 @@
+<app-promo-carousel [banners]="promoBanners" />
+
+@for (section of sections; track section.id) {
+  <app-product-rail
+    [sectionId]="section.id"
+    [title]="section.title"
+    [link]="section.link"
+    [products]="section.products"
+    [wishlistedIds]="state.wishlist()"
+    (addToCart)="state.addToCart($event)"
+    (toggleWishlist)="toggleWishlist($event)"
+  />
+}

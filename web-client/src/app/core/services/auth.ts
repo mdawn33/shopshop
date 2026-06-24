@@ -22,14 +22,17 @@ export class Auth {
   constructor(private http: HttpClient) {}
   
   checkSession() {
-    return this.http.get<Claim[]>(`${environment.apiGatewayUrl}/bff/user`).pipe(
-      tap((claims) => this.userClaims.set(claims)),
-      map(() => true),
-      catchError(() => {
-        this.userClaims.set(null);
-        return of(false);
-      })
-    );
+    // return this.http.get<Claim[]>(`${environment.apiGatewayUrl}/bff/user`).pipe(
+    //   tap((claims) => this.userClaims.set(claims)),
+    //   map(() => true),
+    //   catchError(() => {
+    //     this.userClaims.set(null);
+    //     return of(false);
+    //   })
+    // );
+
+    return of(true);
+
 
     // this.http.get('/bff/user').subscribe({
     //   next: (res: any) => {

@@ -1,0 +1,27 @@
+<a class="skip-link" href="#main-content">Jump to the main content</a>
+
+<app-header
+  [deliveryLocation]="deliveryLocation()"
+  [cartCount]="cartCount()"
+  [navLinks]="navLinks"
+  (search)="onSearch($event)"
+></app-header>
+
+<div class="layout-body">
+  <app-sidebar
+    [categories]="categories"
+    [activeCategory]="activeCategory()"
+    (categorySelected)="selectCategory($event)"
+  />
+
+
+  <main id="main-content" class="layout-content">
+    <router-outlet></router-outlet>
+  </main>
+  
+
+  <!--  -->
+
+</div>
+
+<app-footer (subscribe)="onNewsletterSubscribe($event)" />

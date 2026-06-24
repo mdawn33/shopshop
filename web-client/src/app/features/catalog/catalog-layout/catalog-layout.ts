@@ -1,19 +1,19 @@
-import { Component, inject, signal, computed } from '@angular/core';
-import { Header } from "../../../shared/layout/header/header";
-import { Sidebar } from "../../../shared/layout/sidebar/sidebar";
+import { Component, signal, computed } from '@angular/core';
+import { Header } from '../../../shared/layout/header/header';
+import { Sidebar } from '../../../shared/layout/sidebar/sidebar';
 import { ProductRail } from '../../product/product-rail/product-rail';
 import { PromoCarousel } from '../../../shared/layout/promo-carousel/promo-carousel';
-import { Product } from '../../../core/models/product';
-import { CATALOG_SECTIONS, CATEGORIES, NAV_LINKS, PROMO_BANNERS } from '../../../shared/data/sample-data';
 import { Footer } from '../../../shared/layout/footer/footer';
+import { CATEGORIES } from '../../../shared/data/sample-data';
+import { RouterOutlet } from "../../../../../node_modules/@angular/router/types/_router_module-chunk";
 
 @Component({
-  selector: 'app-main-view',
-  imports: [Header, Sidebar, ProductRail, PromoCarousel, Footer],
-  templateUrl: './main-view.html',
-  styleUrl: './main-view.scss',
+  selector: 'app-catalog-layout',
+  imports: [Header, Sidebar, ProductRail, PromoCarousel, Footer, RouterOutlet],
+  templateUrl: './catalog-layout.html',
+  styleUrl: './catalog-layout.scss',
 })
-export class MainView {
+export class CatalogLayout {
 
   // Signals fire the update when the reference changes
   // Signal.update() always produces a new reference, so it triggers change detection
@@ -59,5 +59,4 @@ export class MainView {
   selectCategory(id: string) : void {
     this.activeCategory.set(id);
   }
-
 }
