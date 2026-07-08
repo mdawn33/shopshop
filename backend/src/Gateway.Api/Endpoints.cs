@@ -41,11 +41,13 @@ public static class Endpoints
             );
         });
         
-        routes.MapGet("/bff/logout", (HttpContext context) =>
+        routes.MapGet("/bff/logout", (HttpContext context, string? redirectUrl) =>
         {
+            // context.BuildRedirectUrl(redirectUrl)
+            
             // TODO: Handle the error when user is not authenticated or cookie is not provided and this endpoint is called
             
-            // Clear both the local BFF session cookie AND the Identity Provider session
+            // Clear both the local BFF session cookie AND the Identity Provider session (OIDC scheme)
             return Results.SignOut(
                 properties: new AuthenticationProperties { RedirectUri = "/" },
                 authenticationSchemes: new[] 
@@ -68,7 +70,6 @@ public static class Endpoints
             var properties = new AuthenticationProperties { RedirectUri = "/" };
             // This line instructs keycloak to skip the login screen and directly show the signup screen
             properties.Parameters.Add("prompt", "register");
-            
             
             return Results.Challenge(properties);
         });

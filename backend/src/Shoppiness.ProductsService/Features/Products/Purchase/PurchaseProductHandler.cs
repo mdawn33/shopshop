@@ -9,7 +9,7 @@ namespace Shoppiness.ProductService.Features.Products.Purchase;
 public sealed class PurchaseProductHandler(
     ProductDbContext db,
     IStocksApiClient stocksApiClient,
-    IServiceBusPublisher busPublisher,
+    // IServiceBusPublisher busPublisher,
     ILogger<PurchaseProductHandler> logger)
     : IPurchaseProductHandler
 {
@@ -40,7 +40,7 @@ public sealed class PurchaseProductHandler(
         if (!isAvailable)
             return new PurchaseProductResult(false, "Insufficient stock for the requested quantity.", null, StatusCodes.Status409Conflict);
 
-        await busPublisher.PublishAsync("update-stock", new UpdateStockEvent(productId, -request.Quantity), cancellationToken);
+        // await busPublisher.PublishAsync("update-stock", new UpdateStockEvent(productId, -request.Quantity), cancellationToken);
         
         var orderId = Guid.NewGuid();
 

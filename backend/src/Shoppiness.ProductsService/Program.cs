@@ -14,20 +14,22 @@ using Shoppiness.ProductService.Features.Products.Purchase;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Allow Aspire to discover the service
 builder.AddServiceDefaults();
 
 builder.Services.AddOpenApi();
 
-// Register Azure Service Bus client
-builder.AddAzureServiceBusClient("service-bus");
-// Enable distributed tracing for Azure Service Bus
-AppContext.SetSwitch("Azure.Experimental.EnableActivitySource", true);
+// // Register Azure Service Bus client
+// builder.AddAzureServiceBusClient("service-bus");
+// // Enable distributed tracing for Azure Service Bus
+// AppContext.SetSwitch("Azure.Experimental.EnableActivitySource", true);
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApiServices();
 
 var app = builder.Build();
 
+// Map health check endpoints (only for development, for now)
 app.MapDefaultEndpoints();
 
 if (app.Environment.IsDevelopment())

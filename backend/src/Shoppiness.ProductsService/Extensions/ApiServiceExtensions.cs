@@ -25,7 +25,7 @@ public static class ApiServiceExtensions
             .AddRefitClient<IStocksApiClient>()
             .ConfigureHttpClient(client => client.BaseAddress = new Uri("https+http://stocks-api"));
 
-        services.AddSingleton<IServiceBusPublisher, ServiceBusPublisher>();
+        // services.AddSingleton<IServiceBusPublisher, ServiceBusPublisher>();
 
         return services;
     }

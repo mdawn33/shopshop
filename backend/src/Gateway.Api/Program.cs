@@ -1,9 +1,8 @@
-using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using Gateway.Api;
 using Gateway.Api.Extensions;
 using Gateway.Api.Services;
-using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Yarp.ReverseProxy.Transforms;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,12 +28,11 @@ builder.Services.AddDataProtection();
 builder.Services.AddAuthenticationSchemes(builder);
 
 // Add authorization and policies
-builder.Services.AddAuthorization(options =>
-{
-    // options.AddPolicy("Admin", policy => policy.RequireClaim("role", "admin"));
-    options.AddPolicy("authentication_required",
-        policy => policy.RequireAuthenticatedUser().RequireClaim("api-access", true.ToString()));
-});
+// Check required policies
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("authentication_required", policy => policy.RequireAuthenticatedUser().RequireClaim("api-access", true.ToString()))
+    .AddPolicy("Admin", policy => policy.RequireAuthenticatedUser().RequireClaim("role", "admin"))
+    .AddPolicy("User", policy => policy.RequireAuthenticatedUser().RequireClaim("role", "user"));
 
 
 // Add a scoped service to handle token refresh. The service is scoped to handle concurrent requests
@@ -81,7 +79,7 @@ builder.Services.AddReverseProxy()
             }
         });
     })
-    .AddServiceDiscoveryDestinationResolver();
+    .AddServiceDiscoveryDestinationResolver(); // Resolve downstream services discovery
 
 // builder.Services.AddCors(options =>
 // {
@@ -113,13 +111,16 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// app.UseCors("AngularDevPolicy");
+app.UseCors("AngularDevPolicy");
 
 app.UseHttpsRedirection();
 
 app.UseRouting();
+
+// Set the HttpContext.User property
 app.UseAuthentication();
 app.UseAntiforgery();
+// Run the authorization middleware
 app.UseAuthorization();
 
 app.MapEndpoints();

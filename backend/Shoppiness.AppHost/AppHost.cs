@@ -18,7 +18,7 @@ var shoppinessPostgres = builder.AddPostgres("postgres")
 
 // This allows me to use an already created database, and inject it into the application
 var productsPgDb = shoppinessPostgres.AddDatabase("ProductsPgDb");
-var stocksPgDb = shoppinessPostgres.AddDatabase("StocksPgDb");
+// var stocksPgDb = shoppinessPostgres.AddDatabase("StocksPgDb");
 
 
 // Configure Azure Service Bus
@@ -31,20 +31,21 @@ var stocksPgDb = shoppinessPostgres.AddDatabase("StocksPgDb");
 
 
 // Stocks API
-var stocksApi = builder.AddProject<Projects.Shoppiness_StocksService>("stocks-api")
-    .WithReference(stocksPgDb)
-    // .WithReference(serviceBus)
-    .WithHttpEndpoint(port: 5200, name: "http");
+// var stocksApi = builder.AddProject<Projects.Shoppiness_StocksService>("stocks-api")
+//     .WithReference(stocksPgDb)
+//     // .WithReference(serviceBus)
+//     .WithHttpEndpoint(port: 5200, name: "http");
 
 
+// Products API
 var productsApi = builder.AddProject<Projects.Shoppiness_ProductsService>("products-api")
-    .WithReference(stocksApi)
     .WithReference(productsPgDb)
+    // .WithReference(stocksApi)
     // .WithReference(serviceBus)
     .WithHttpEndpoint(port: 5100, name: "http");
 
 var keycloak = builder.AddKeycloak("keycloak", 8080)
-    .WithDataVolume();
+    .WithDataVolume("keycloak-data");
 
 var jaeger = builder.AddContainer("jaeger", "jaegertracing/jaeger:latest")
     .WithHttpEndpoint(
@@ -60,14 +61,14 @@ var jaeger = builder.AddContainer("jaeger", "jaegertracing/jaeger:latest")
 // API Gateway
 builder.AddProject<Projects.Gateway_Api>("gateway-api")
     .WithReference(keycloak)
-    .WithReference(stocksApi)
+    // .WithReference(stocksApi)
     .WithReference(productsApi)
     .WaitFor(keycloak)
-    .WaitFor(stocksApi)
+    // .WaitFor(stocksApi)
     .WaitFor(productsApi)
     .WithHttpsEndpoint(5001)
     .WithHttpEndpoint(5000)
-    .WithExternalHttpEndpoints()
+    .WithExternalHttpEndpoints() // Mark only the gateway API as the resource to be exposed externally
     .WithEnvironment("JAEGER_OTLP_ENDPOINT", jaeger.GetEndpoint("otlp"));
 
 

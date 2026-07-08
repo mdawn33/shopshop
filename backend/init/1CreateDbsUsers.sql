@@ -4,6 +4,7 @@ CREATE DATABASE "ProductsPgDb";
 CREATE DATABASE "StocksPgDb";
 
 -- Create application user
+-- TODO: Remove password from here
 CREATE USER shoppinessdbuser WITH PASSWORD 'Trey776!';
 
 -- Grant connection to database
