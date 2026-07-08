@@ -1,0 +1,65 @@
+@let p = product();
+
+
+<article class="product-card">
+    @if (discountPercent(p) > 0) {
+        <span class="product-card__ribbon">-{{ discountPercent(p) }}%</span>
+    }
+
+    <button
+        type="button"
+        class="product-card__wishlist"
+        [class.product-card__wishlist--active]="wishlisted()"
+        (click)="onToggleWishlist()"
+        [attr.aria-pressed]="wishlisted()"
+        [attr.aria-label]="wishlisted() ? 'Quitar de favoritos' : 'Agregar a favoritos'"
+    >
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="icon icon--sm">
+            <path d="M12 20.5s-7.5-4.6-9.8-9.1C.7 7.9 2.2 4.5 5.5 3.7c2-.5 4 .3 5.2 2 .3.4.9.4 1.2 0 1.2-1.7 3.2-2.5 5.2-2 3.3.8 4.8 4.2 3.3 7.7-2.3 4.5-9.8 9.1-9.8 9.1Z" [attr.fill]="wishlisted() ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+        </svg>
+    </button>
+
+    <a [routerLink]="['/product/detail/', p.id]" class="product-card__cover">
+        <img [src]="p.imageUrl" [alt]="p.name" loading="lazy" />
+        @if (p.fastShipping) {
+        <span class="product-card__shipping">
+            <svg viewBox="0 0 24 24" aria-hidden="true" class="icon icon--xs">
+            <path d="M3 16V7a1 1 0 0 1 1-1h9v10H4a1 1 0 0 1-1-1Zm10-7h3.5L20 12.5V16h-7V9Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+            <circle cx="7" cy="17.5" r="1.6" fill="currentColor"/>
+            <circle cx="16.5" cy="17.5" r="1.6" fill="currentColor"/>
+            </svg>
+            Fast Shipping
+        </span>
+        }
+    </a>
+
+    <div class="product-card__body">
+        <a href="#" class="product-card__title">{{ p.name }}</a>
+        <p class="product-card__brand">{{ p.brand }}</p>
+        <p class="product-card__meta">SKU: {{ p.sku }} · {{ p.variant }}</p>
+
+        <div class="product-card__rating" [attr.aria-label]="p.rating + ' out of 5 stars, ' + p.reviewCount + ' reviews'">
+        @for (slot of starSlots; track slot) {
+            <svg viewBox="0 0 20 20" aria-hidden="true" class="star" [class.star--filled]="slot < filledStars(p.rating)">
+            <path d="M10 1.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9L10 14.8l-5.2 2.9 1-5.9-4.3-4.1 5.9-.8L10 1.5Z" fill="currentColor"/>
+            </svg>
+        }
+        <span class="product-card__review-count">({{ p.reviewCount }})</span>
+        </div>
+
+        <p class="product-card__stock" [class]="'product-card__stock--' + stockLevel(p.stock)">
+        {{ stockLabel(p.stock) }}
+        </p>
+
+        <div class="product-card__price">
+        @if (discountPercent(p) > 0) {
+            <span class="price-original">{{ formatPrice(p.originalPrice) }}</span>
+        }
+        <span class="price-current">{{ formatPrice(p.price) }}</span>
+        </div>
+
+        <button type="button" class="product-card__add" (click)="onAddToCart()">
+            Agregar al carrito
+        </button>
+    </div>
+</article>

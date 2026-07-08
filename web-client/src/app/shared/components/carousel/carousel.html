@@ -1,0 +1,9 @@
+<section class="promo-carousel" aria-label="Promociones destacadas">
+  <div class="promo-carousel__track">
+    @for (banner of banners(); track banner.id) {
+      <figure class="promo-carousel__item">
+        <img [src]="banner.imageUrl" [alt]="banner.alt" loading="lazy" />
+      </figure>
+    }
+  </div>
+</section>

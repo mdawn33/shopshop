@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './core/guards/auth';
+import { authGuard, claimGuard } from './core/guards/auth';
 
 export const routes: Routes = [
     {
@@ -17,12 +17,10 @@ export const routes: Routes = [
     {
         path: 'catalog', 
         loadChildren: () => import('./features/catalog/catalog.routes').then(m => m.default),
-        canActivate: [authGuard]
     },
     {
-        path: 'product', 
-        loadChildren: () => import('./features/product/product.routes').then(m => m.default),
-        canActivate: [authGuard]
+        path: 'product',
+        loadChildren: () => import('./features/product/product.routes').then(m => m.default),  
     },
     {
         path: 'cart', 
@@ -32,12 +30,13 @@ export const routes: Routes = [
     {
         path: 'checkout', 
         loadChildren: () => import('./features/checkout/checkout.routes').then(m => m.default),
-        canActivate: [authGuard]
+        canActivate: [claimGuard('role', 'customer')]
     },
     {
         path: 'orders', 
         loadChildren: () => import('./features/orders/orders.routes').then(m => m.default),
-        canActivate: [authGuard]
+        canActivate: [claimGuard('role', 'customer')]
+
     },
     // {
     //     path: 'unauthorized',
