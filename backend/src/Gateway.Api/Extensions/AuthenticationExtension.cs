@@ -36,7 +36,7 @@ public static class AuthenticationExtension
                 options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
                 options.Cookie.HttpOnly = true;
                 options.Cookie.IsEssential = true;
-                options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(15);
                 // options.SlidingExpiration = true;
                 
                 // Challenge handler - OnRedirectToLogin event is skipped because we are using the OpenID Connect middleware to handle the challenge.
@@ -67,17 +67,15 @@ public static class AuthenticationExtension
                 options.ResponseType = OpenIdConnectResponseType.Code;
                 options.ResponseMode = OpenIdConnectResponseMode.Query;
                 
-                // options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-
-                options.SaveTokens = true; // Saves access and refresh tokens inside the cookie:w
+                options.SaveTokens = true; // Saves access and refresh tokens inside the cookie
                 
-                options.GetClaimsFromUserInfoEndpoint = true; // Get claims from the UserInfo endpoint in case it requires additional claims:w
+                options.GetClaimsFromUserInfoEndpoint = true; // Get claims from the UserInfo endpoint in case it requires additional claims
                 options.UsePkce= true;
                 options.CallbackPath = "/signin-oidc";
                 options.SignedOutCallbackPath = "/signout-callback-oidc";
                 options.MapInboundClaims = false;  // Prevents WS-Federation claims conversion mapping boilerplate
                 options.TokenValidationParameters.NameClaimType = JwtRegisteredClaimNames.Name;
-                // options.TokenValidationParameters.RoleClaimType = "roles";
+                options.TokenValidationParameters.RoleClaimType = ClaimTypes.Role;
                 
                 
                 // Use the below code in case keycloak returns claims in a format different from JSON
@@ -89,8 +87,8 @@ public static class AuthenticationExtension
                         
                         // Keycloak and other OIDC providers may return duplicated, unnecessary claims, which can cause the cookie to be too large. 
                         // Eliminamos metadatos basura del protocolo que ocupan mucho espacio
-                        context.Properties.Items.Remove(".Token.id_token"); // El ID token no lo necesitas para el downstream
-                        context.Properties.Items.Remove(".Token.token_type");
+                        context.Properties?.Items.Remove(".Token.id_token"); // El ID token no lo necesito para el downstream
+                        context.Properties?.Items.Remove(".Token.token_type");
 
                         if (context.Principal?.Identity is ClaimsIdentity identity)
                         {
@@ -115,13 +113,14 @@ public static class AuthenticationExtension
                     // }
                 };
                 
-                
+                // Clears the default scopes and adds the required scopes
                 options.Scope.Clear();  
                 options.Scope.Add("openid");
                 options.Scope.Add("roles-only");
                 options.Scope.Add("offline_access"); // Enforces issuing a refresh token ????????
                 
-                // Challenge handler - By default, ASP.NET redirects to the login page. We want to issue a 401 Unauthorized instead for the SPA to handle.
+                
+                // Challenge handler - By default, ASP.NET redirects to the login page. Following code issues a 401 Unauthorized instead for the SPA to handle.
                 // This is required if the app is hosted on a different domain than the identity provider
                 // options.Events = new OpenIdConnectEvents
                 // {
@@ -141,6 +140,17 @@ public static class AuthenticationExtension
                 //     }
                 // };
 
+                // This code allows passing id_token_hint parameter during logout without prompting the user with an extra ""Are you sure you want to sign out?"" Keycloak confirmation screen
+                // options.Events.OnRedirectToIdentityProviderForSignOut = context =>
+                // {
+                //     // Keycloak requires the original ID token to process a silent back-channel logout
+                //     if (context.Properties.Items.TryGetValue(".Token.id_token", out var idToken))
+                //     {
+                //         context.ProtocolMessage.IdTokenHint = idToken;
+                //     }
+                //     return Task.CompletedTask;
+                // };
+                
                 // // Forbid handler - By default, the middleware set the 403 Forbidden status
                 // options.Events.OnAccessDenied = context =>
                 // {
