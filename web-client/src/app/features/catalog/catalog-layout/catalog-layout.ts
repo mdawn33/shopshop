@@ -4,8 +4,9 @@ import { Sidebar } from '../../../shared/layout/sidebar/sidebar';
 import { ProductRail } from '../../product/product-rail/product-rail';
 import { PromoCarousel } from '../../../shared/layout/promo-carousel/promo-carousel';
 import { Footer } from '../../../shared/layout/footer/footer';
-import { CATEGORIES } from '../../../shared/data/sample-data';
+import { CATALOG_SECTIONS, CATEGORIES, NAV_LINKS, PROMO_BANNERS } from '../../../shared/data/sample-data';
 import { RouterOutlet } from "../../../../../node_modules/@angular/router/types/_router_module-chunk";
+import { Product } from '../../../core/models/product';
 
 @Component({
   selector: 'app-catalog-layout',

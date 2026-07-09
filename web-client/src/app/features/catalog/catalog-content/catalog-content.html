@@ -8,6 +8,6 @@
     [products]="section.products"
     [wishlistedIds]="state.wishlist()"
     (addToCart)="state.addToCart($event)"
-    (toggleWishlist)="toggleWishlist($event)"
+    (toggleWishlist)="state.toggleWishlist($event)"
   />
 }
