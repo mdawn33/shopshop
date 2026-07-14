@@ -22,22 +22,24 @@
     <a [routerLink]="['/product/detail/', p.id]" class="product-card__cover">
         <img [src]="p.imageUrl" [alt]="p.name" loading="lazy" />
         @if (p.fastShipping) {
-        <span class="product-card__shipping">
-            <svg viewBox="0 0 24 24" aria-hidden="true" class="icon icon--xs">
-            <path d="M3 16V7a1 1 0 0 1 1-1h9v10H4a1 1 0 0 1-1-1Zm10-7h3.5L20 12.5V16h-7V9Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-            <circle cx="7" cy="17.5" r="1.6" fill="currentColor"/>
-            <circle cx="16.5" cy="17.5" r="1.6" fill="currentColor"/>
-            </svg>
-            Fast Shipping
-        </span>
+            <span class="product-card__shipping">
+                <svg viewBox="0 0 24 24" aria-hidden="true" class="icon icon--xs">
+                    <path d="M3 16V7a1 1 0 0 1 1-1h9v10H4a1 1 0 0 1-1-1Zm10-7h3.5L20 12.5V16h-7V9Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                    <circle cx="7" cy="17.5" r="1.6" fill="currentColor"/>
+                    <circle cx="16.5" cy="17.5" r="1.6" fill="currentColor"/>
+                </svg>
+                Fast Shipping
+            </span>
         }
     </a>
 
     <div class="product-card__body">
-        <a href="#" class="product-card__title">{{ p.name }}</a>
-        <p class="product-card__brand">{{ p.brand }}</p>
-        <p class="product-card__meta">SKU: {{ p.sku }} · {{ p.variant }}</p>
-
+        <a [routerLink]="['/product/detail/', p.id]" class="product-card__title">
+            <p class="product-card__title">{{ p.name }}</p>
+            <p class="product-card__brand">{{ p.brand_author }}</p>
+            <p class="product-card__meta">SKU: {{ p.sku }} · {{ p.variant }}</p>
+        </a>
+        
         <div class="product-card__rating" [attr.aria-label]="p.rating + ' out of 5 stars, ' + p.reviewCount + ' reviews'">
         @for (slot of starSlots; track slot) {
             <svg viewBox="0 0 20 20" aria-hidden="true" class="star" [class.star--filled]="slot < filledStars(p.rating)">
@@ -48,7 +50,7 @@
         </div>
 
         <p class="product-card__stock" [class]="'product-card__stock--' + stockLevel(p.stock)">
-        {{ stockLabel(p.stock) }}
+            {{ stockLabel(p.stock) }}
         </p>
 
         <div class="product-card__price">

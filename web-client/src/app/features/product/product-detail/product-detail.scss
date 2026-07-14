@@ -1,0 +1,35 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.product-image {
+  position: sticky;
+  
+}
+
+.product-detail {
+
+
+
+  &__rating {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-bottom: 2px;
+  }
+
+  &__review-count {
+    margin-left: 4px;
+    font-size: 0.75rem;
+    color: var(--color-ink-faint);
+  }
+}
+
+.star {
+  width: 14px;
+  height: 14px;
+  color: var(--color-border);
+
+  &--filled { color: var(--color-accent); }
+}

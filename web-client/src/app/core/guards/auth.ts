@@ -5,25 +5,30 @@ import { map } from "rxjs";
 
 
 export const authGuard: CanActivateFn = (route, state) => {
-    const auth = inject(Auth);
 
-    if (auth.isAuthenticated()) {
-      console.log("User is authenticated");
-        return true;
-    }
+    return true;
+    
+    // const auth = inject(Auth);
 
-    return auth.checkSession().pipe(
-        map((isLoggedIn) => {
-          console.log("User is logged in: ", isLoggedIn);
-            if(isLoggedIn) {
-                return true;
-            } else {
-              console.log("calling login endpoint ...");
-                auth.login(state.url);
-                return false;
-            }
-        })
-    );
+    // if (auth.isAuthenticated()) {
+    //   console.log("User is authenticated");
+    //     return true;
+    // }
+
+    // return auth.checkSession().pipe(
+    //     map((isLoggedIn) => {
+    //       console.log("User is logged in: ", isLoggedIn);
+    //         if(isLoggedIn) {
+    //             return true;
+    //         } else {
+    //           console.log("calling login endpoint ...");
+    //             auth.login(state.url);
+    //             return false;
+    //         }
+    //     })
+    // );
+
+
     // return router.createUrlTree(['/auth/login'], {
     //     queryParams: { returnUrl: encodeURIComponent(state.url) }
     // })

@@ -1,6 +1,6 @@
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withComponentInputBinding } from '@angular/router';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth';
@@ -16,8 +16,8 @@ import { Auth } from './core/services/auth';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes),
-    provideHttpClient(withInterceptors([authInterceptor, errorInterceptor, loadingInterceptor])),
+    provideRouter(routes, withComponentInputBinding()),
+    provideHttpClient(withInterceptors([authInterceptor, errorInterceptor, loadingInterceptor]), withFetch()),
     // Modern Angular 19+ Initialization Strategy
     provideAppInitializer(() => {
       // Runs in the injection context, allowing direct service resolution

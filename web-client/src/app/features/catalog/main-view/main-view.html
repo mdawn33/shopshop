@@ -1,5 +1,24 @@
-<p>main-view works!</p>
+<!-- header component -->
 
+<!-- sidebar component -->
+
+
+<!-- content -->
+
+
+@for (section of catalogSections; track $index) {
+
+  <app-product-rail
+    [sectionId]="section.id" 
+    [title]="section.title"
+    [link]="section.link"
+    [products]="section.products"
+    [wishlistedIds]="stateService.wishlist()"
+    (addToCart)="stateService.addToCart($event)"
+    (toggleWishlist)="stateService.toggleWishlist($event)"
+  />
+  
+}
 
 <p>
     @if (authService.isAuthenticated()) {
@@ -15,3 +34,5 @@
 <p>
   <button routerLink="/product/detail/1">Product 1</button>
 </p>
+
+<!-- footer component -->

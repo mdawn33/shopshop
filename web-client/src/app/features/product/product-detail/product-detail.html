@@ -1,1 +1,40 @@
-<p>product-detail works!</p>
+
+<article class="product-detail">
+
+  <aside class="product-detail__image">
+    <!-- here goes the product image -->
+     @if (product()) {
+      <img [src]="product().imageUrl" [alt]="product().name" loading="lazy" />
+     }
+  </aside>
+
+  <section>
+    <!-- here goes the product information -->
+    <!-- @if (productResource.value(); as product) { -->
+    @if (product()) {
+      <div>
+        <h2>{{ product().name }}</h2>
+        <p><a [routerLink]="['/']">{{product().brand_author}}</a></p>
+        <div class="product-detail__rating" [attr.aria-label]="product().rating + ' out of 5 stars, ' + product().reviewCount + ' reviews'">
+          @for (slot of starSlots; track slot) {
+              <svg viewBox="0 0 20 20" aria-hidden="true" class="star" [class.star--filled]="slot < filledStars(product().rating)">
+              <path d="M10 1.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9L10 14.8l-5.2 2.9 1-5.9-4.3-4.1 5.9-.8L10 1.5Z" fill="currentColor"/>
+              </svg>
+          }
+          <span class="product-detail__review-count">({{ product().reviewCount }})</span>
+        </div>
+        
+        <p>{{ product().description }}</p>
+      </div>
+    }
+    
+  </section>
+
+  <section>
+    <!-- here goes the author/manufacturer/brand information -->
+  </section>
+
+  <aside>
+    <!-- here goes the products price and shipment information -->
+  </aside>
+</article>

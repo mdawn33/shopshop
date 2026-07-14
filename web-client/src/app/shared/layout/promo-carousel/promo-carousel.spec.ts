@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { Carousel } from './carousel';
+import { Carousel } from './promo-carousel';
 
 describe('Carousel', () => {
   let component: Carousel;

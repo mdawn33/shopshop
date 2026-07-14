@@ -4,10 +4,10 @@ import { PromoBanner } from '../../../core/models/promo-banner';
 @Component({
   selector: 'app-carousel',
   imports: [],
-  templateUrl: './carousel.html',
-  styleUrl: './carousel.scss',
+  templateUrl: './promo-carousel.html',
+  styleUrl: './promo-carousel.scss',
 })
-export class Carousel {
+export class PromoCarousel {
 
   readonly banners = input<PromoBanner[]>([]);
 }
