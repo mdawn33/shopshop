@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Gateway.Api.Helpers;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -26,6 +27,8 @@ public static class AuthenticationExtension
                 options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 
                 // Define the schema to use when the user is not authenticated.
+                // If the gateway receives a request from the browser, it should redirect to the OIDC provider's login page.
+                // if the request is from a machine-to-machine client, it should return a 401 Unauthorized response.
                 options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
 
             })
@@ -121,24 +124,28 @@ public static class AuthenticationExtension
                 
                 
                 // Challenge handler - By default, ASP.NET redirects to the login page. Following code issues a 401 Unauthorized instead for the SPA to handle.
-                // This is required if the app is hosted on a different domain than the identity provider
-                // options.Events = new OpenIdConnectEvents
-                // {
-                //     OnRedirectToIdentityProvider = context =>
-                //     {
-                //         // Example: If it's an API request, don't redirect to the external IDP. Return 401.
-                //         if (context.Request.Path.StartsWithSegments("/api"))
-                //         {
-                //             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                //             context.HandleResponse(); // Stops the OIDC redirect engine entirely
-                //         }
-                //         
-                //         // Example: Add custom query parameters to the external login URL
-                //         // context.ProtocolMessage.Prompt = "login"; 
-                //         
-                //         return Task.CompletedTask;
-                //     }
-                // };
+                // This is required if the app is hosted on a different domain than the identity provider ???
+                options.Events = new OpenIdConnectEvents
+                {
+                    OnRedirectToIdentityProvider = context =>
+                    {
+                        // Example: If it's an API request, don't redirect to the external IdP. Return 401.
+                        if (context.Request.Path.StartsWithSegments("/api-"))
+                        {
+                            // Stops the OIDC redirect engine entirely
+                            context.HandleResponse(); 
+                            // Return 401 Unauthorized
+                            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                            
+                            // Optional: return a JSON error object
+                            context.Response.ContentType = "application/json";
+                            return context.Response.WriteAsJsonAsync(new { error = "Unauthorized", message = "API access requires valid tokens." });
+                        }
+                        
+                        // Redirect to the OIDC provider's login page normally
+                        return Task.CompletedTask;
+                    }
+                };
 
                 // This code allows passing id_token_hint parameter during logout without prompting the user with an extra ""Are you sure you want to sign out?"" Keycloak confirmation screen
                 // options.Events.OnRedirectToIdentityProviderForSignOut = context =>
@@ -175,13 +182,9 @@ public static class AuthenticationExtension
             // Bearer header → JWT Bearer (machine-to-machine). No Bearer header → Cookie (SPA session).
             .AddPolicyScheme("smart", "smart", options =>
             {
-                options.ForwardDefaultSelector = context =>
-                {
-                    var auth = context.Request.Headers.Authorization.FirstOrDefault();
-                    return auth?.StartsWith("Bearer ") == true
-                        ? JwtBearerDefaults.AuthenticationScheme
-                        : CookieAuthenticationDefaults.AuthenticationScheme;
-                };
+                options.ForwardDefaultSelector = context => context.Request.HasBearerToken(out _)
+                    ? JwtBearerDefaults.AuthenticationScheme
+                    : CookieAuthenticationDefaults.AuthenticationScheme;
             });
 
 

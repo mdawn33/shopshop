@@ -23,16 +23,6 @@ public static class Endpoints
             var path = !string.IsNullOrEmpty(returnUrl) && UrlHelpers.IsLocalUrl(returnUrl)
                 ? returnUrl
                 : "/";
-
-            // var frontendOrigin = config["BFF:FrontendOrigin"] ?? string.Empty;
-            // var redirectUri = $"{frontendOrigin}{path}";
-            //
-            // var properties = new AuthenticationProperties 
-            // { 
-            //     RedirectUri = "http://localhost:4200" 
-            // };
-
-            // await context.ChallengeAsync(OpenIdConnectDefaults.AuthenticationScheme, properties);
             
             // Trigger the OIDC challenge
             return Results.Challenge(
@@ -43,27 +33,43 @@ public static class Endpoints
         
         routes.MapGet("/bff/logout", (HttpContext context, string? redirectUrl) =>
         {
-            // context.BuildRedirectUrl(redirectUrl)
+            // TODO: Check if there's an error when the user is not authenticated or cookie is not provided and this endpoint is called
             
-            // TODO: Handle the error when user is not authenticated or cookie is not provided and this endpoint is called
+            var path = !string.IsNullOrEmpty(redirectUrl) && UrlHelpers.IsLocalUrl(redirectUrl)
+                ? redirectUrl
+                : "/";
             
             // Clear both the local BFF session cookie AND the Identity Provider session (OIDC scheme)
             return Results.SignOut(
-                properties: new AuthenticationProperties { RedirectUri = "/" },
-                authenticationSchemes: new[] 
-                { 
+                properties: new AuthenticationProperties { RedirectUri = path },
+                authenticationSchemes:
+                [
                     CookieAuthenticationDefaults.AuthenticationScheme, 
-                    OpenIdConnectDefaults.AuthenticationScheme 
-                }
+                    OpenIdConnectDefaults.AuthenticationScheme
+                ]
             );
         });
 
-        routes.MapGet("/bff/user", (HttpContext context) =>
+        routes.MapGet("/bff/user", (IAntiforgery antiforgery, HttpContext context) =>
+        {
+            if (context.User.Identity?.IsAuthenticated != true)
             {
-                return context.User.Identity?.IsAuthenticated != true ? 
-                        Results.Unauthorized() : 
-                        Results.Ok(context.User.Claims.Select(c => new { c.Type, c.Value }));
+                return Results.Unauthorized();
+            }
+           
+            // This sets a non-HttpOnly cookie that JavaScript CAN read to extract the token string.
+            // If the token expires mid-session, mutating requests will fail with a 400 Bad Request until something re-triggers /bff/user
+            // This can be handled by moving the token generation and cookie setting to a middleware that runs on every request. In this case I should be careful to not overwrite the cookie if it already exists and to identify the requests that should trigger the cookie update.
+            var tokens = antiforgery.GetAndStoreTokens(context);
+            context.Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken!, new CookieOptions
+            {
+                HttpOnly = false,
+                Secure = true,
+                SameSite = SameSiteMode.Strict
             });
+            
+            return Results.Ok(context.User.Claims.Select(c => new { c.Type, c.Value }));
+        });
 
         routes.MapGet("/bff/register", () =>
         {
@@ -75,33 +81,12 @@ public static class Endpoints
         });
 
 
-        routes.MapPost("/bff/refresh", async (HttpContext context, TokenRefreshService tokenRefreshService) =>
-        {
-            var token = await tokenRefreshService.GetValidTokenAsync(context);
-            return token is not null ? Results.Ok() : Results.Unauthorized();
-        })
-        .RequireAuthorization();
-        
-        
-        // Endpoint for the frontend to obtain a CSRF token
-        // This sets a non-HttpOnly cookie that JavaScript CAN read to extract the token string.
-        routes.MapGet("/api/antiforgery/token", (IAntiforgery antiforgery, HttpContext httpContext) =>
-        {
-            var tokens = antiforgery.GetAndStoreTokens(httpContext);
-
-            // Write a cookie
-            httpContext.Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken!, 
-                new CookieOptions 
-                { 
-                    HttpOnly = false, 
-                    Secure = true,
-                    SameSite = SameSiteMode.Strict
-                });
-
-            return Results.Ok();
-        })
-        .RequireAuthorization(); // Ensure only logged-in users get a session anti-forgery token
-
+        // routes.MapPost("/bff/refresh", async (HttpContext context, TokenRefreshService tokenRefreshService) =>
+        // {
+        //     var token = await tokenRefreshService.GetValidTokenAsync(context);
+        //     return token is not null ? Results.Ok() : Results.Unauthorized();
+        // })
+        // .RequireAuthorization();
 
     }
 }

@@ -31,14 +31,14 @@ var productsPgDb = shoppinessPostgres.AddDatabase("ProductsPgDb");
 
 
 // Stocks API
-// var stocksApi = builder.AddProject<Projects.Shoppiness_StocksService>("stocks-api")
+// var stocksApi = builder.AddProject<Projects.Shoppiness_StocksService>("api-stocks")
 //     .WithReference(stocksPgDb)
 //     // .WithReference(serviceBus)
 //     .WithHttpEndpoint(port: 5200, name: "http");
 
 
 // Products API
-var productsApi = builder.AddProject<Projects.Shoppiness_ProductsService>("products-api")
+var productsApi = builder.AddProject<Projects.Shoppiness_ProductsService>("api-products")
     .WithReference(productsPgDb)
     // .WithReference(stocksApi)
     // .WithReference(serviceBus)

@@ -1,6 +1,6 @@
 namespace Gateway.Api.Helpers;
 
-public class UrlHelpers
+public static class UrlHelpers
 {
  /// <summary>
  /// Prevents Open Redirect vulnerabilities.
