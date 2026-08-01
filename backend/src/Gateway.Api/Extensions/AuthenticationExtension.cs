@@ -72,7 +72,7 @@ public static class AuthenticationExtension
                 
                 options.SaveTokens = true; // Saves access and refresh tokens inside the cookie
                 
-                options.GetClaimsFromUserInfoEndpoint = true; // Get claims from the UserInfo endpoint in case it requires additional claims
+                options.GetClaimsFromUserInfoEndpoint = false; // Get claims from the UserInfo endpoint in case it requires additional claims
                 options.UsePkce= true;
                 options.CallbackPath = "/signin-oidc";
                 options.SignedOutCallbackPath = "/signout-callback-oidc";
@@ -84,49 +84,48 @@ public static class AuthenticationExtension
                 // Use the below code in case keycloak returns claims in a format different from JSON
                 options.Events = new OpenIdConnectEvents
                 {
+                    // Using this event to strip all the claims off the cookie's claim identity before it is even stored in the cookie
+                    // This event runs after the IdP successfully authenticates the user but before the local cookie is created
                     OnTicketReceived = context =>
                     {
                         //https://dev.to/devin-rosario/fixing-request-header-or-cookie-too-large-nginx-error-48fp
                         
                         // Keycloak and other OIDC providers may return duplicated, unnecessary claims, which can cause the cookie to be too large. 
-                        // Eliminamos metadatos basura del protocolo que ocupan mucho espacio
-                        context.Properties?.Items.Remove(".Token.id_token"); // El ID token no lo necesito para el downstream
-                        context.Properties?.Items.Remove(".Token.token_type");
-
+                        
+                        // context.Properties?.Items.Remove(".Token.id_token"); // El ID token no lo necesito para el downstream pero si para el logout,
+                        // para que Keycloak pueda reconocer el cliente y no muestre el diálogo para re-confirmar el cierre de sesion
+                        // context.Properties?.Items.Remove(".Token.token_type");
+                        
                         if (context.Principal?.Identity is ClaimsIdentity identity)
                         {
-                            // Vaciamos los claims de la identidad de la cookie. 
-                            // YARP no los necesita porque leerá directamente el "access_token" guardado.
-                            var claimsToRemove = identity.Claims.ToList();
+                            // 1. Define the critical claims that MUST stay
+                            var claimsToKeep = new[] 
+                            {
+                                "name",                    // Matches your JwtRegisteredClaimNames.Name
+                                "sub",                     // Unique identifier for Antiforgery validation
+                                "role",                    // Keep if you use role-based authorization
+                                ClaimTypes.NameIdentifier, // Standard identity fallback
+                                ClaimTypes.Name
+                            };
+
+                            // 2. Identify claims that are safe to drop (like heavy metadata or the raw ID token)
+                            var claimsToRemove = identity.Claims
+                                .Where(c => !claimsToKeep.Contains(c.Type))
+                                .ToList();
+
+                            // 3. Remove only the non-essential claims
                             foreach (var claim in claimsToRemove)
                             {
                                 identity.RemoveClaim(claim);
                             }
+                            
                         }
                         
                         return Task.CompletedTask;
-                    }
+                    },
                     
-                    // OnTokenValidated = context =>
-                    // {
-                    //     var identity = context.Principal?.Identity as ClaimsIdentity;
-                    //     // Example: Hardcode a custom claim or extract nested Keycloak roles
-                    //     identity?.AddClaim(new Claim("custom_bff_claim", "hello-world"));
-                    //     return Task.CompletedTask;
-                    // }
-                };
-                
-                // Clears the default scopes and adds the required scopes
-                options.Scope.Clear();  
-                options.Scope.Add("openid");
-                options.Scope.Add("roles-only");
-                options.Scope.Add("offline_access"); // Enforces issuing a refresh token ????????
-                
-                
-                // Challenge handler - By default, ASP.NET redirects to the login page. Following code issues a 401 Unauthorized instead for the SPA to handle.
-                // This is required if the app is hosted on a different domain than the identity provider ???
-                options.Events = new OpenIdConnectEvents
-                {
+                    // Challenge handler - By default, ASP.NET redirects to the login page. Following code issues a 401 Unauthorized instead for the SPA to handle.
+                    // This is required if the app is hosted on a different domain than the identity provider ???
                     OnRedirectToIdentityProvider = context =>
                     {
                         // Example: If it's an API request, don't redirect to the external IdP. Return 401.
@@ -145,8 +144,33 @@ public static class AuthenticationExtension
                         // Redirect to the OIDC provider's login page normally
                         return Task.CompletedTask;
                     }
+                    
+                    // OnTokenValidated = context =>
+                    // {
+                    //     var identity = context.Principal?.Identity as ClaimsIdentity;
+                    //     // Example: Hardcode a custom claim or extract nested Keycloak roles
+                    //     identity?.AddClaim(new Claim("custom_bff_claim", "hello-world"));
+                    //     return Task.CompletedTask;
+                    // }
                 };
-
+                
+                // Clears the default scopes and adds the required scopes
+                // options.Scope.Clear();
+                // options.Scope.Add("openid"); // for session management
+                // options.Scope.Add("roles-only");
+                
+                
+                // "profile"/"email" are the standard OIDC scopes that grant preferred_username,
+                // name, and email claims on the access token. Without them, /bff/user's claims
+                // fix (bff-user-claims, design.md D5) has no email/display-name claim to map,
+                // since "roles-only" alone does not carry them. Added here so those claims exist
+                // on the token; empirical verification against a live Keycloak instance is still
+                // tracked separately (tasks.md 6.4).
+                // options.Scope.Add("profile");
+                // options.Scope.Add("email");
+                
+                
+         
                 // This code allows passing id_token_hint parameter during logout without prompting the user with an extra ""Are you sure you want to sign out?"" Keycloak confirmation screen
                 // options.Events.OnRedirectToIdentityProviderForSignOut = context =>
                 // {

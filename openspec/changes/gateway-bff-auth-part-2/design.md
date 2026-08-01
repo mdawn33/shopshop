@@ -432,6 +432,121 @@ mirroring `RequireAuthorization()`).
   rejected for the same reason noted under D8's alternatives: transforms run after routing has
   matched a cluster, which is the wrong place to reject a request outright.
 
+### D10: Cookie-size fix (HTTP 431) — shrink the token at Keycloak, fetch profile claims on demand
+
+**Root cause:** `OnTicketReceived` (`AuthenticationExtension.cs`) only strips the `ClaimsIdentity`
+— it never touches `.Token.access_token` / `.Token.refresh_token`, which `SaveTokens = true`
+still stores in full inside `AuthenticationProperties.Items` on the same `__Host-Shoppiness_bff`
+cookie. D5's fix (adding `profile`/`email` scopes plus a `role` protocol mapper, see
+`AuthenticationExtension.cs`'s `options.Scope.Add("profile")`/`.Add("email")`) grew the access
+token enough that the cookie now chunks into three physical pieces (>4KB) — the same failure
+mode the original claim-stripping was built to prevent, reopened through token bytes instead of
+identity-claim bytes. Because cookies are scoped by hostname, not port, this bloated app cookie
+also rides along on every request to Keycloak (`localhost:8080`), stacking on top of Keycloak's
+own accumulating session cookies on `localhost` and tripping
+`431 Request Header Fields Too Large` on Keycloak's login page.
+
+**Constraint:** the Gateway remains stateless for this change — no server-side session/ticket
+store (`ITicketStore`) is introduced. See Phase 2 below for the condition under which that
+constraint would be revisited.
+
+**Decision — Phase 1 (in scope for this change):**
+
+1. **Keycloak:** toggle **"Add to access token" OFF** for the profile/email-related protocol
+   mappers (`email`, `email_verified`, `name`, `preferred_username`, `given_name`,
+   `family_name`) — leave **"Add to userinfo" ON**. This is the step that actually removes bytes
+   from the JWT; changing what the C# code reads back out of the token does nothing on its own,
+   since Keycloak embeds whatever its mappers say to embed regardless of what the application
+   later chooses to parse.
+2. **Keycloak:** add a per-downstream-service `aud` claim — a multi-valued array (e.g.
+   `["product-service","stock-service","payment-service"]`) via a new audience mapper, replacing
+   the current shared `"account"` default (`Authentication:Audience` in
+   `Gateway.Api/appsettings.json`). This directly feeds D7 (downstream JWT validation,
+   `tasks.md` 8.1-8.10): each downstream service's `JwtBearerOptions` validates its own distinct
+   expected audience value against this array, rather than every service accepting the same
+   generic `"account"` audience.
+3. **Keycloak:** remove the `offline_access` scope from the requested scope list — this is a SPA,
+   with no need for an indefinitely-renewable offline refresh token. Effect: the refresh token
+   becomes bound to Keycloak's SSO session lifetime instead of being usable indefinitely.
+4. **Code (`AuthenticationExtension.cs` / `Endpoints.cs`):** narrow what `/bff/user` reads off
+   the access token to just `sub` and `role` — this replaces D5's broader allow-list (`sub`,
+   `email`, `preferred_username`/`name`, `role`; `tasks.md` 6.3) with a narrower one, since
+   `email`/`name`-shaped claims no longer exist on the token after step 1. `aud`, `exp`, `iat`
+   still ride along on the parsed token — not something the handler chooses to include or
+   exclude, just what the token format requires to validate at all.
+5. **Code:** add a `/userinfo` call inside the `/bff/user` handler to fetch `email`, `name`, and
+   `preferred_username` on demand, merged into the same response shape the frontend already
+   expects (preserving D5's `{ Type, Value }[]` shape). This is a new network call, but happens
+   once per session (`/bff/user` is called once after login, not once per proxied request) — the
+   same cost profile D5's alternatives-considered section already accepted for a different
+   reason (see D5's rejected "`/userinfo` on every request" alternative — this is materially
+   different, since it's once-per-session, not once-per-request). It needs its own failure/timeout
+   handling, distinct from `TokenRefreshService`'s existing error paths: a `/userinfo` failure
+   should not be treated identically to a token-refresh failure — `/bff/user` should still return
+   `sub` and `role` and simply omit profile fields if `/userinfo` fails, rather than failing the
+   whole call.
+6. **Refresh token stays in the cookie as-is.** No code change to `TokenRefreshService.cs` — it
+   already forwards the refresh token opaquely without parsing it. Its lifecycle changes
+   (SSO-session-bound instead of offline) only as a side effect of step 3's Keycloak
+   configuration change, not because of any code change here.
+7. **The Gateway remains stateless throughout Phase 1** — no Redis, no `ITicketStore`.
+
+**Phase 2 (explicitly deferred — not tracked as tasks in this change):** if the 431 recurs after
+Phase 1 is tested, OR multi-replica session revocation becomes a real requirement (force-logout,
+admin-initiated session kill, compromised-account response — none of which a pure cookie can do),
+add a Redis-backed server-side session/ticket store. The Duende.BFF `.AddServerSideSessions()`
+pattern is the reference architecture: the cookie becomes just an opaque session reference, and
+the real tokens/claims live in Redis, looked up per request. Redis is named specifically because
+it's already part of the project's stack (per `CLAUDE.md`), not a new operational dependency to
+introduce from scratch.
+
+This deferral is grounded in two points:
+- Shoppiness's Gateway runs as a long-lived ASP.NET Core service behind a load balancer, not
+  serverless/edge — so the usual "no persistent process to hold a store" justification for
+  staying cookie-only doesn't actually apply here. Industry research on this point (Auth.js/
+  NextAuth, OAuth2 Proxy, Curity's Token Handler pattern) cites serverless/edge deployment as the
+  actual reason systems choose cookie-only in practice — a reason this system doesn't share.
+- Despite that, the operational cost of taking on a Redis dependency is deferred until it's
+  actually forced, rather than added preemptively — consistent with Duende's own newer guidance
+  that "most production systems end up with a combination... server-side sessions... and careful
+  scope configuration" (i.e. not an either/or choice; scope minimization first, server-side
+  sessions only once actually needed).
+
+A lighter-weight alternative to full Phase 2, worth naming now in case it's revisited later: a
+hybrid pattern where the cookie still carries the encrypted token payload (as today), but a tiny
+presence-only key (a session ID, no token data) lives in Redis purely to enable instant
+revocation via a cheap existence check. This gets revocation without taking on full server-side
+token custody, and would be a smaller step than the full `AddServerSideSessions()` pattern if
+revocation turns out to be the actual forcing requirement rather than cookie size.
+
+**Future Evolution (noted, not an open question or active task):** the `/userinfo`-on-demand
+approach (step 5) only refreshes profile data (`email`/`name`/`preferred_username`) when
+`/bff/user` is called. If a user updates their profile in Keycloak mid-session, the Gateway will
+keep serving stale profile data until the session ends and the user logs in again. A future
+evolution could refresh this proactively instead — e.g. a periodic background refresh, or
+invalidate-on-Keycloak-event via back-channel logout/session-management webhooks — rather than
+only updating reactively on next login. This is a future consideration to keep on record, not
+something to turn into a task here.
+
+**Alternatives considered:**
+- **Server-side ticket store now, instead of Phase 1** (bring forward what's currently deferred
+  as Phase 2) — rejected for this change; solves cookie size unconditionally, but does **not**
+  shrink the Bearer token YARP forwards to ProductsService/StocksService/PaymentsService on every
+  proxied request (that token is read server-side and forwarded as-is, unaffected by where it's
+  cached on the Gateway side) — and takes on a Redis operational dependency (session-affinity,
+  serialization) before it's actually forced by a real requirement.
+- **Cache a curated, roles-only claim set in the cookie identity** (a scoped-down variant of the
+  full-claims cache D5 already rejected) — rejected; reopens a bounded version of the same
+  staleness/second-source-of-truth risk D5's alternatives-considered section weighed against for
+  the full claim set — every place that could affect the cached set (role changes, token refresh,
+  re-authentication) becomes a call site that must remember to keep the cache in sync, and a
+  missed one produces a silent bug rather than a loud one.
+- **Just raise the header/cookie size limits at the reverse proxy** (e.g. Nginx
+  `large_client_header_buffers`, or equivalent Kestrel/Keycloak-side tuning) instead of shrinking
+  the token — rejected; papers over the symptom without addressing the root cause (everything in
+  `AuthenticationProperties.Items` shares one cookie budget), and will recur the next time a scope
+  or mapper is added, exactly as it did this time when D5's `profile`/`email` scopes were added.
+
 ## Risks / Trade-offs
 
 | Risk | Mitigation |

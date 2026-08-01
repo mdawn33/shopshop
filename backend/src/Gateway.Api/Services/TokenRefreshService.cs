@@ -24,7 +24,7 @@ public class TokenRefreshService
         // 1. Extract expiration and check if token is still valid
         var expiresAtStr = await context.GetTokenAsync("expires_at");
         
-        if (DateTime.TryParse(expiresAtStr, null, DateTimeStyles.RoundtripKind, out var expiresAt))
+        if (DateTime.TryParse(expiresAtStr, null, DateTimeStyles.AdjustToUniversal, out var expiresAt))
         {
             // If token is valid for more than 30 seconds, return it immediately
             if (expiresAt > DateTime.UtcNow.AddSeconds(30))

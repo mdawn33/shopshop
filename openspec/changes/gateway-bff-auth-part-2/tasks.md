@@ -59,7 +59,7 @@
   equivalent) so that the `XSRF-TOKEN` cookie is set as a side effect of calling `/bff/user`.
   This task is coupled to the `/bff/user` handler rewrite in section 6 (6.1-6.7) — implement it
   alongside those changes, since both touch the same handler
-- [ ] 2.11 Document, as a dependency note for `frontend-bff-auth` (not a task performed in this
+- [x] 2.11 Document, as a dependency note for `frontend-bff-auth` (not a task performed in this
   change, which is backend-only): there is no longer a separate token-issuance endpoint to call —
   the `XSRF-TOKEN` cookie is now set automatically as a side effect of the frontend's existing
   required call to `GET /bff/user` immediately after login (per section 6, `bff-user-claims`).
@@ -130,21 +130,26 @@
 > Highest-severity item in this change. Depends on: 3.1-3.4 (Challenge fix should be verified
 > first, since this capability's failure responses route through the same auth pipeline).
 
-- [ ] 6.1 In `Gateway.Api/Endpoints.cs`, change the `/bff/user` handler to resolve
+- [ ] I still need to fix the claims set in the cookie. Should I remove all of them and have the /bff/user endpoint to get them from the IdP when required or should I add some of them to the cookie?
+
+- [x] 6.1 In `Gateway.Api/Endpoints.cs`, change the `/bff/user` handler to resolve
   `TokenRefreshService` and call `GetValidTokenAsync(context)` instead of reading
   `context.User.Claims`
-- [ ] 6.2 Parse the returned access token using `JsonWebTokenHandler().ReadJsonWebToken(token)`
+- [x] 6.2 Parse the returned access token using `JsonWebTokenHandler().ReadJsonWebToken(token)`
   (or equivalent) to extract its claims, without a full re-validation pass (see design.md D5 for
   the trust-level rationale)
-- [ ] 6.3 Map an explicit allow-list of claims into the response: user id (`sub`), email,
+- [x] 6.3 Map an explicit allow-list of claims into the response: user id (`sub`), email,
   display name (`preferred_username`/`name`), and role claims (per the configured
   `RoleClaimType`) — preserve the existing `{ Type, Value }[]` response shape the frontend
   already expects
-- [ ] 6.4 Verify during implementation whether the access token actually carries `email` and a
+- [x] 6.4 Verify during implementation whether the access token actually carries `email` and a
   display-name-suitable claim, given the current `Scope.Add("roles-only")` configuration (no
   `profile`/`email` scope requested) — if claims are missing, either add the needed scopes to
   `AuthenticationExtension.cs`'s `options.Scope` list or fall back to a `/userinfo` call per
   design.md D5's documented alternative
+  (Confirmed via live-decoded token inspection: `email`, `name`, `preferred_username`,
+  `given_name`, `family_name`, and `sub` are all present — no additional scopes or `/userinfo`
+  fallback needed.)
 - [ ] 6.5 Confirm `OnTicketReceived` in `AuthenticationExtension.cs` is unchanged — the cookie
   identity must remain stripped of claims after this fix
 - [ ] 6.6 Return `401 Unauthorized` (unchanged) when `GetValidTokenAsync` returns `null` due to
@@ -209,14 +214,67 @@
 - [ ] 8.10 Manually verify: confirm `Shoppiness.PaymentsService` starts successfully with the
   new authentication pipeline registered and no mapped endpoints
 
-## 9. Cross-cutting verification
+## 9. Cookie-size fix — Phase 1 (cookie-size-431-fix)
 
-- [ ] 9.1 Run `openspec validate gateway-bff-auth-part-2 --strict` and confirm it passes
-- [ ] 9.2 Confirm no changes were made under `web-client/`,
+> See design.md D10 for full rationale, including the root-cause chain (token bytes, not
+> identity claims, are what grew the cookie) and the explicitly deferred Phase 2 (Redis-backed
+> server-side session store) — Phase 2 is documented in design.md only and is **not** tracked as
+> tasks here. Item 9.2 is D7-adjacent: it introduces the `aud` claim values that section 8's
+> `downstream-jwt-validation` tasks (8.1, 8.6, 8.8) configure each service to validate against.
+> Items 9.4-9.5 narrow/extend the `/bff/user` claims work already done in section 6
+> (`bff-user-claims`, tasks 6.1-6.4) — read those first, since this section revises rather than
+> duplicates that work.
+
+- [ ] 9.1 Keycloak: for the profile/email-related protocol mappers currently attached to the
+  client scope granting them (`email`, `email_verified`, `name`, `preferred_username`,
+  `given_name`, `family_name`), toggle **"Add to access token" OFF**, leaving
+  **"Add to userinfo" ON**
+- [ ] 9.2 Keycloak: add a new audience mapper emitting a multi-valued `aud` claim listing each
+  downstream service's expected audience value (e.g.
+  `["product-service","stock-service","payment-service"]`), replacing the current shared
+  `"account"` default (`Authentication:Audience` in `Gateway.Api/appsettings.json`). Coordinate
+  with section 8: each service's own `Authentication:Audience` config value (added in tasks 8.1,
+  8.6, 8.8) must match its corresponding entry in this array
+- [ ] 9.3 Keycloak: remove the `offline_access` scope from the requested scope list (both
+  `AuthenticationExtension.cs`'s `options.Scope` calls and the corresponding Keycloak client
+  scope configuration, if attached there too) — the refresh token becomes bound to Keycloak's
+  SSO session lifetime instead of being indefinitely renewable as a result
+- [ ] 9.4 In `Gateway.Api/Endpoints.cs`'s `/bff/user` handler, narrow the claims allow-list
+  established in task 6.3 down to just `sub` and `role` (`aud`/`exp`/`iat` still ride along on
+  the parsed token regardless, since the token format requires them — not something the handler
+  chooses to include)
+- [ ] 9.5 In `Gateway.Api/Endpoints.cs`'s `/bff/user` handler, add a call to Keycloak's
+  `/userinfo` endpoint to fetch `email`, `name`, and `preferred_username`, merged into the same
+  response shape the frontend already expects (preserving the `{ Type, Value }[]` shape from
+  task 6.3). Give this call its own failure/timeout handling, distinct from
+  `TokenRefreshService`'s existing error paths — a `/userinfo` failure should degrade to
+  `sub`+`role`-only rather than failing the whole `/bff/user` call
+- [ ] 9.6 Confirm no code change is needed to `Gateway.Api/Services/TokenRefreshService.cs` — it
+  already forwards the refresh token opaquely without parsing it; its lifecycle change
+  (SSO-session-bound instead of offline) is a side effect of 9.3's Keycloak config change only
+- [ ] 9.7 Confirm the Gateway remains stateless throughout — no `ITicketStore`, no Redis-backed
+  session store introduced in this change (design.md D10's Phase 2 remains deferred/conditional)
+- [ ] 9.8 Manually verify: log in repeatedly without an intervening logout (the original repro
+  condition for the bug) and confirm the `__Host-Shoppiness_bff` cookie no longer chunks into
+  multiple physical cookies, and that Keycloak's login page no longer returns
+  `431 Request Header Fields Too Large`
+- [ ] 9.9 Manually verify: call `GET /bff/user` with a valid session and confirm the response
+  still contains `sub`, `role`, `email`, and `name`/`preferred_username` — the same shape task
+  6.7 verified, now sourced from two places (token + `/userinfo`) instead of one
+- [ ] 9.10 Manually verify: decode a freshly issued access token (e.g. via jwt.io) and confirm
+  `email`/`name`/`preferred_username`/`given_name`/`family_name` are absent from the token
+  itself post-9.1, while `sub`, `role`, and the new multi-valued `aud` (post-9.2) are present
+
+## 10. Cross-cutting verification
+
+- [ ] 10.1 Run `openspec validate gateway-bff-auth-part-2 --strict` and confirm it passes
+- [ ] 10.2 Confirm no changes were made under `web-client/`,
   `openspec/changes/frontend-auth/`, or `openspec/changes/frontend-bff-auth/`
-- [ ] 9.3 Re-read `openspec/temporal-discussion.md` sections 7 and 11 against the final
+- [ ] 10.3 Re-read `openspec/temporal-discussion.md` sections 7 and 11 against the final
   implementation and confirm every numbered gap (1-8) has a corresponding completed task group
-  above
-- [ ] 9.4 Note in the PR/change summary which verification tasks (2.12-2.15, 3.3-3.4, 5.1,
-  8.9-8.10) actually ran against a live instance versus which remain simulated/unverified, so
-  `frontend-bff-auth` implementers know what's empirically confirmed
+  above. Note that section 9 (D10, the cookie-size fix) is a separate addendum discovered during
+  implementation, not one of the original eight audit gaps — confirm it's complete too, but don't
+  expect it to map to a numbered item in `temporal-discussion.md`
+- [ ] 10.4 Note in the PR/change summary which verification tasks (2.12-2.15, 3.3-3.4, 5.1,
+  8.9-8.10, 9.8-9.10) actually ran against a live instance versus which remain
+  simulated/unverified, so `frontend-bff-auth` implementers know what's empirically confirmed

@@ -67,19 +67,37 @@
 - [ ] 5.5 Manually verify: trigger a request that returns an explicit `401` (if any such endpoint
       exists today) and confirm the toast + redirect path fires correctly.
 
-## 6. `csrf-interceptor` — minimal, forward-looking
+## 6. `csrf-interceptor` — reads `XSRF-TOKEN` cookie, no token-fetch endpoint
 
-- [ ] 6.1 Create `csrfInterceptor` under `web-client/src/app/core/interceptors/`: matches
-      Gateway-native URL + mutating method (`POST`/`PUT`/`PATCH`/`DELETE`), fetches and caches
-      `GET {apiGatewayUrl}/api/antiforgery/token`, attaches `X-XSRF-TOKEN` header.
+> Backend note (`gateway-bff-auth-part-2`, D8/D9, tasks 2.10-2.11): the standalone
+> `GET /api/antiforgery/token` endpoint referenced in the original version of this section no
+> longer exists. The `XSRF-TOKEN` cookie is now set as a side effect of `GET /bff/user`, which
+> `Auth.checkSession()` (`web-client/src/app/core/services/auth.ts`) already calls during
+> bootstrap (Section 2) — no separate fetch is needed. Antiforgery is also now enforced on
+> mutating YARP-proxied routes (`/products-api/*`, `/stocks-api/*`, `/payments-api/*`), not just
+> Gateway-native ones, so the interceptor must cover both rather than excluding the proxied paths.
+
+- [ ] 6.1 Create `csrfInterceptor` under `web-client/src/app/core/interceptors/`: matches any
+      mutating method (`POST`/`PUT`/`PATCH`/`DELETE`) request — both Gateway-native and
+      YARP-proxied (`/products-api/*`, `/stocks-api/*`, `/payments-api/*`) — reads the
+      `XSRF-TOKEN` cookie value directly (e.g. via `document.cookie` or Angular's built-in
+      `HttpXsrfTokenExtractor`) and attaches it as the `X-XSRF-TOKEN` header. No HTTP call to
+      fetch a token — the backend no longer exposes a dedicated antiforgery-token endpoint.
 - [ ] 6.2 Register `csrfInterceptor` in the `provideHttpClient(withInterceptors([...]))` chain in
       `web-client/src/app/app.config.ts`, ordered before `errorInterceptor` so CSRF failures are
       still normalized by it.
 - [ ] 6.3 Confirm proxied downstream requests (`/products-api/*`, `/stocks-api/*`,
-      `/payments-api/*`) are excluded from the CSRF check by URL-matching logic.
-- [ ] 6.4 No functional test possible yet (no current consumer) — add a unit test against a
-      synthetic Gateway-native POST request to verify the header is attached, and a synthetic
-      proxied POST request to verify it is not.
+      `/payments-api/*`) are INCLUDED in the CSRF check, not excluded — the backend requires
+      antiforgery validation precisely on those mutating proxied routes (`gateway-bff-auth-part-2`
+      D8), with the only bypass being machine-to-machine Bearer-token callers, which does not
+      apply to the browser SPA.
+- [ ] 6.4 Verify the ordering dependency: `Auth.checkSession()` (Section 2) must call
+      `GET /bff/user` during bootstrap before any mutating request is issued, since that call is
+      what sets the `XSRF-TOKEN` cookie for the session — confirm this holds (it does, per current
+      `auth.ts`) and flag it explicitly as a load-bearing dependency, not an incidental detail.
+- [ ] 6.5 Add a unit test: verify the header is attached on a synthetic Gateway-native mutating
+      request and on a synthetic proxied mutating request (e.g. `POST /products-api/...`) when the
+      `XSRF-TOKEN` cookie is present, and confirm it is NOT attached on `GET` requests.
 
 ## 7. Cross-cutting verification
 
