@@ -14,6 +14,23 @@ public class Product
     public string? Description { get; set; }
 
     /// <summary>
+    /// Product brand or manufacturer label. Not every product realistically has one
+    /// (e.g. books, groceries) — nullable rather than a fabricated placeholder.
+    /// </summary>
+    public string? Brand { get; set; }
+
+    /// <summary>
+    /// Catalog SKU. No DB-level uniqueness constraint in this change (see design's Open Questions).
+    /// </summary>
+    public string? Sku { get; set; }
+
+    /// <summary>
+    /// Descriptive variant (e.g. color, size, capacity). A single free-text attribute, not a
+    /// first-class variant/SKU-matrix model.
+    /// </summary>
+    public string? Variant { get; set; }
+
+    /// <summary>
     /// Fallback price used when no active <see cref="ProductPrice"/> record exists.
     /// </summary>
     public decimal BasePrice { get; set; }

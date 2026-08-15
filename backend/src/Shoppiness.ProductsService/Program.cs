@@ -1,5 +1,6 @@
 using ProductService.Infrastructure.Extensions;
 using Shoppiness.ProductService.Extensions;
+using Shoppiness.ProductService.Features.Catalog.Sections;
 using CategoryCreate = Shoppiness.ProductService.Features.Categories.Create;
 using CategoryGetById = Shoppiness.ProductService.Features.Categories.GetById;
 using CategoryList = Shoppiness.ProductService.Features.Categories.List;
@@ -7,10 +8,10 @@ using CategoryUpdate = Shoppiness.ProductService.Features.Categories.Update;
 using CategoryDelete = Shoppiness.ProductService.Features.Categories.Delete;
 using ProductCreate = Shoppiness.ProductService.Features.Products.Create;
 using ProductGetById = Shoppiness.ProductService.Features.Products.GetById;
-using ProductList = Shoppiness.ProductService.Features.Products.List;
 using ProductUpdate = Shoppiness.ProductService.Features.Products.Update;
 using ProductDelete = Shoppiness.ProductService.Features.Products.Delete;
 using Shoppiness.ProductService.Features.Products.Purchase;
+using Shoppiness.ProductService.Features.Products.Search;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -50,11 +51,14 @@ CategoryDelete.MapEndpoint(app);
 // Product endpoints
 ProductCreate.MapEndpoint(app);
 ProductGetById.MapEndpoint(app);
-ProductList.MapEndpoint(app);
+SearchProductsEndpoint.MapEndpoint(app);
 ProductUpdate.MapEndpoint(app);
 ProductDelete.MapEndpoint(app);
 
 // Purchase endpoint
 PurchaseProductEndpoint.MapEndpoint(app);
+
+// Catalog endpoints
+GetCatalogSectionsEndpoint.MapEndpoint(app);
 
 app.Run();

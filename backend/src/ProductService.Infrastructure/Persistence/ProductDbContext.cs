@@ -16,6 +16,7 @@ public sealed class ProductDbContext : DbContext
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductPrice> ProductPrices => Set<ProductPrice>();
+    public DbSet<CatalogSection> CatalogSections => Set<CatalogSection>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -24,6 +25,7 @@ public sealed class ProductDbContext : DbContext
         modelBuilder.ApplyConfiguration(new CategoryConfiguration());
         modelBuilder.ApplyConfiguration(new ProductConfiguration());
         modelBuilder.ApplyConfiguration(new ProductPriceConfiguration());
+        modelBuilder.ApplyConfiguration(new CatalogSectionConfiguration());
     }
 
     /// <summary>

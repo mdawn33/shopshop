@@ -17,6 +17,15 @@ internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.Description)
             .HasMaxLength(2000);
 
+        builder.Property(p => p.Brand)
+            .HasMaxLength(200);
+
+        builder.Property(p => p.Sku)
+            .HasMaxLength(100);
+
+        builder.Property(p => p.Variant)
+            .HasMaxLength(200);
+
         builder.Property(p => p.BasePrice)
             .IsRequired()
             .HasPrecision(18, 4);
