@@ -1,0 +1,63 @@
+// ---------------------------------------------------------------------------
+// Design tokens defined here on :host so they always cascade to every child
+// component via CSS custom property inheritance — no global styles.scss
+// import required. catalog-theme.scss still exists as the "proper" global
+// setup, but this keeps the component self-contained.
+// ---------------------------------------------------------------------------
+
+// :host is and Angular-only CSS selector that targets the component's DOM element
+:host {
+  display: block;
+  font-family: var(--font-body);
+  color: var(--color-ink);
+  background: var(--color-bg);
+}
+
+// ---------------------------------------------------------------------------
+// Page layout
+// ---------------------------------------------------------------------------
+.main-layout {
+  max-width: var(--container-w);
+  margin: 0 auto;
+  padding: 24px 24px 64px;
+  display: grid;
+  grid-template-columns: 256px 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+// min-width: 0 prevents the content column from overflowing the grid track
+// (default is min-width: auto which lets content push the column wider than
+// the available space, breaking the max-width container constraint).
+.catalog-content {
+  min-width: 0;
+}
+
+// ---------------------------------------------------------------------------
+// Skip link — lives here (not in catalog-theme.scss) so it's guaranteed to
+// load as part of the self-contained component bundle.
+// ---------------------------------------------------------------------------
+.skip-link {
+  position: fixed;
+  left: 12px;
+  top: -80px;
+  z-index: 9999;
+  padding: 10px 16px;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  transition: top 0.15s ease;
+
+  &:focus {
+    top: 12px;
+  }
+}
+
+@media (max-width: 900px) {
+  .catalog-layout {
+    grid-template-columns: 1fr;
+    padding-top: 16px;
+  }
+}

@@ -1,0 +1,36 @@
+<!-- Category sidebar -->
+<button type="button" class="filters-trigger" (click)="toggle()">
+  <svg viewBox="0 0 24 24" aria-hidden="true" class="icon">
+    <path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </svg>
+  Categorías
+</button>
+
+@if (isOpen()) {
+  <div class="filters-backdrop" (click)="close()"></div>
+}
+
+<aside class="filters-sidebar" [class.filters-sidebar--open]="isOpen()">
+  <div class="filters-sidebar__header">
+    <h2>Categorías</h2>
+    <button type="button" class="filters-sidebar__close" (click)="close()" aria-label="Cerrar categorías">
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="icon">
+        <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+  <ul class="filters-sidebar__list">
+    @for (category of categories(); track category.id) {
+      <li>
+        <button
+          type="button"
+          class="filters-sidebar__option"
+          [class.filters-sidebar__option--active]="activeCategory() === category.id"
+          (click)="select(category.id)"
+        >
+          {{ category.label }}
+        </button>
+      </li>
+    }
+  </ul>
+</aside>

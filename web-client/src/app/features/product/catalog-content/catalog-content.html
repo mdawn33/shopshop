@@ -1,0 +1,16 @@
+<!-- promo carousel -->
+<app-promo-carousel [banners]="promoBanners" />
+
+@for (section of catalogSections(); track $index) {
+
+  <app-product-rail
+    [sectionId]="section.id" 
+    [title]="section.title"
+    [link]="section.link"
+    [products]="section.products"
+    [wishlistedIds]="stateService.wishlist()"
+    (addToCart)="stateService.addToCart($event)"
+    (toggleWishlist)="stateService.toggleWishlist($event)"
+  />
+  
+}

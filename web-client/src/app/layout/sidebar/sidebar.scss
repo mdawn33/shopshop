@@ -1,0 +1,126 @@
+:host {
+  display: block;
+}
+
+.filters-trigger {
+  display: none;
+}
+
+.filters-backdrop {
+  display: none;
+}
+
+.filters-sidebar {
+  position: sticky;
+  top: 160px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+
+    h2 {
+      font-family: var(--font-display);
+      font-size: 1.0625rem;
+      font-weight: 600;
+      margin: 0;
+    }
+  }
+
+  &__close {
+    display: none;
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__option {
+    width: 100%;
+    text-align: left;
+    padding: 9px 12px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    font: inherit;
+    font-size: 0.875rem;
+    color: var(--color-ink-soft);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+
+    &:hover {
+      background: var(--color-surface-sunken);
+      color: var(--color-ink);
+    }
+
+    &--active {
+      background: var(--color-primary-soft);
+      color: var(--color-primary-dark);
+      font-weight: 600;
+    }
+  }
+}
+
+@media (max-width: 900px) {
+  .filters-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: 1.5px solid var(--color-border);
+    background: var(--color-surface);
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--color-primary-dark);
+    cursor: pointer;
+  }
+
+  .filters-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(31, 42, 34, 0.45);
+    z-index: 150;
+  }
+
+  .filters-sidebar {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    bottom: 0;
+    width: min(320px, 86vw);
+    border-radius: 0;
+    z-index: 151;
+    overflow-y: auto;
+    transition: left 0.22s ease;
+    box-shadow: var(--shadow-pop);
+
+    &--open {
+      left: 0;
+    }
+
+    &__close {
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border: 0;
+      background: var(--color-surface-sunken);
+      border-radius: 50%;
+      color: var(--color-ink);
+      cursor: pointer;
+    }
+  }
+}

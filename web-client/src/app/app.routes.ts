@@ -3,7 +3,7 @@ import { authGuard, claimGuard } from './core/guards/auth';
 
 export const routes: Routes = [
     {
-        path: '', redirectTo: 'catalog', pathMatch: 'full'
+        path: '', redirectTo: 'product', pathMatch: 'full'
     },
     {
         path: 'auth', 
@@ -13,14 +13,11 @@ export const routes: Routes = [
     //     path: 'admin', 
     //     component: ManagementComponent, 
     //     canActivate: [claimGuard('role', 'Admin')] // Requires standard "Admin" token profile claim
-    // },
-    {
-        path: 'catalog', 
-        loadChildren: () => import('./features/catalog/catalog.routes').then(m => m.default),
-    },
+    // },    
     {
         path: 'product',
-        loadChildren: () => import('./features/product/product.routes').then(m => m.default),  
+        loadChildren: () => import('./features/product/product.routes').then(m => m.default),
+        canActivate: [authGuard]
     },
     {
         path: 'cart', 

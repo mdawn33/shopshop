@@ -1,0 +1,36 @@
+<a class="skip-link" href="#main-content">Jump to the main content</a>
+
+<!-- Clean all these input parameters from the header, sidebar and footer. Use a service or state manager -->
+
+<!-- <app-header
+  [deliveryLocation]="deliveryLocation()"
+  [cartCount]="cartCount()"
+  [navLinks]="navLinks"
+  (search)="onSearch($event)"
+></app-header> -->
+
+
+<p>
+    @if (authService.isAuthenticated()) {
+    <!-- The Logout Button -->
+    <button (click)="authService.logout()" class="logout-btn">
+      Logout
+    </button>
+  } @else {
+    <button routerLink="/login">Login</button>
+  }
+</p>
+
+<main id="main-content" class="main-layout">
+  <!-- <app-sidebar
+    [categories]="categories"
+    [activeCategory]="activeCategory()"
+    (categorySelected)="selectCategory($event)"
+  /> -->
+
+  <div class="catalog-content">
+    <router-outlet />
+  </div>
+</main>
+
+<!-- <app-footer (subscribe)="onNewsletterSubscribe($event)" /> -->
